@@ -6,7 +6,7 @@ protocols:
 environment_variables:
     - name: AZURE_OPENAI_ENDPOINT
       value: ${AZURE_OPENAI_ENDPOINT}
-    - name: AZURE_AI_PROJECT_ENDPOINT
-      value: ${AZURE_AI_PROJECT_ENDPOINT}
-    - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-      value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+    - name: MS_FOUNDRY_PROJECT_ENDPOINT
+      value: ${MS_FOUNDRY_PROJECT_ENDPOINT}
+    - name: MS_FOUNDRY_MODEL_DEPLOYMENT
+      value: ${MS_FOUNDRY_MODEL_DEPLOYMENT}

@@ -6,25 +6,20 @@ Ready for deployment to Foundry Hosted Agent service.
 
 import asyncio
 import os
-from typing import Annotated
 from datetime import datetime
-from dotenv import load_dotenv
+from typing import Annotated
 
-load_dotenv(override=True)
-
+from agent_framework import Agent
 from agent_framework.azure import AzureAIAgentClient
 from azure.ai.agentserver.agentframework import from_agent_framework
 from azure.identity.aio import DefaultAzureCredential
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=".env", override=True)
 
 # Configure these for your Foundry project via environment variables (see .env.sample)
-PROJECT_ENDPOINT = os.getenv("AZURE_AI_PROJECT_ENDPOINT")
-MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.2")
-
-if not PROJECT_ENDPOINT:
-    raise SystemExit(
-        "Error: AZURE_AI_PROJECT_ENDPOINT environment variable is not set.\n"
-        "Copy .env.sample to .env and fill in your Azure AI Foundry project endpoint."
-    )
+PROJECT_ENDPOINT = os.environ["MS_FOUNDRY_PROJECT_ENDPOINT"]
+MODEL_DEPLOYMENT_NAME = os.environ["MS_FOUNDRY_MODEL_DEPLOYMENT"]
 
 
 # Simulated hotel data for Seattle
@@ -85,15 +80,13 @@ def get_available_hotels(
 
 async def main():
     """Main function to run the agent as a web server."""
-    async with (
-        DefaultAzureCredential() as credential,
-        AzureAIAgentClient(
-            project_endpoint=PROJECT_ENDPOINT,
-            model_deployment_name=MODEL_DEPLOYMENT_NAME,
-            credential=credential,
-        ) as client,
-    ):
-        agent = client.create_agent(
+    async with DefaultAzureCredential() as credential:
+        agent = Agent(
+            client=AzureAIAgentClient(
+                project_endpoint=PROJECT_ENDPOINT,
+                model_deployment_name=MODEL_DEPLOYMENT_NAME,
+                credential=credential,
+            ),
             name="SeattleHotelAgent",
             instructions="""You are a helpful travel assistant specializing in finding hotels in Seattle, Washington.
 

@@ -71,6 +71,7 @@ param aiProjectDependentResourcesJson string = '[]'
 var aiProjectDeployments = json(aiProjectDeploymentsJson)
 var aiProjectConnections = json(aiProjectConnectionsJson)
 var aiProjectDependentResources = json(aiProjectDependentResourcesJson)
+var defaultModelDeploymentName = length(aiProjectDeployments) > 0 ? string(aiProjectDeployments[0].name) : ''
 
 @description('Enable hosted agent deployment')
 param enableHostedAgents bool
@@ -158,7 +159,8 @@ output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 
 // Endpoints
-output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT
+output MS_FOUNDRY_PROJECT_ENDPOINT string = aiProject.outputs.MS_FOUNDRY_PROJECT_ENDPOINT
+output MS_FOUNDRY_MODEL_DEPLOYMENT string = defaultModelDeploymentName
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
 output APPLICATIONINSIGHTS_RESOURCE_ID string = aiProject.outputs.APPLICATIONINSIGHTS_RESOURCE_ID

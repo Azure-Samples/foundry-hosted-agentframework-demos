@@ -2,9 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml .
+
+RUN uv pip install --system --prerelease=allow -r pyproject.toml
 
 COPY main.py .
 
