@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+requiredVersions:
+    extensions:
+        azure.ai.agents: '>=0.1.0-preview'
+name: ai-foundry-starter-basic
+services:
+    seattle-hotel-agent:
+        project: .
+        host: azure.ai.agent
+        language: docker
+        docker:
+            remoteBuild: true
+        config:
+            container:
+                resources:
+                    cpu: "0.25"
+                    memory: 0.5Gi
+                scale:
+                    maxReplicas: 1
+            deployments:
+                - model:
+                    format: OpenAI
+                    name: gpt-5.2
+                    version: "2025-12-11"
+                  name: gpt-5.2
+                  sku:
+                    capacity: 10
+                    name: GlobalStandard
+            startupCommand: python main.py
+infra:
+    provider: bicep
+    path: ./infra

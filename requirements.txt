@@ -1,0 +1,8 @@
+azure-ai-agentserver-agentframework==1.0.0b17
+python-dotenv
+azure-identity
+
+# Azure Monitor / OpenTelemetry
+azure-monitor-opentelemetry-exporter>=1.0.0b51
+opentelemetry-sdk>=1.40.0
+opentelemetry-api>=1.40.0
