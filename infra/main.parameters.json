@@ -17,9 +17,6 @@
       "aiFoundryProjectName": {
         "value": "${AZURE_AI_PROJECT_NAME}"
       },
-      "aiDeploymentsLocation": {
-        "value": "${AZURE_LOCATION}"
-      },
       "principalId": {
         "value": "${AZURE_PRINCIPAL_ID}"
       },

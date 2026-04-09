@@ -11,41 +11,18 @@ param environmentName string
 @description('Name of the resource group to use or create')
 param resourceGroupName string = 'rg-${environmentName}'
 
-// Restricted locations to match list from
-// https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses?tabs=python-key#region-availability
+// Restricted locations to support all features:
+// - Responses API: https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses?tabs=python-key#region-availability
+// - Evaluations + red teaming: https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network
 @minLength(1)
 @description('Primary location for all resources')
 @allowed([
-  'australiaeast'
-  'brazilsouth'
-  'canadacentral'
-  'canadaeast'
-  'eastus'
   'eastus2'
   'francecentral'
-  'germanywestcentral'
-  'italynorth'
-  'japaneast'
-  'koreacentral'
   'northcentralus'
-  'norwayeast'
-  'polandcentral'
-  'southafricanorth'
-  'southcentralus'
-  'southeastasia'
-  'southindia'
-  'spaincentral'
   'swedencentral'
-  'switzerlandnorth'
-  'uaenorth'
-  'uksouth'
-  'westus'
-  'westus2'
-  'westus3'
 ])
 param location string
-
-param aiDeploymentsLocation string
 
 @description('Id of the user or app to assign application roles')
 param principalId string
@@ -134,7 +111,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
   name: 'ai-project'
   params: {
     tags: tags
-    location: aiDeploymentsLocation
+    location: location
     aiFoundryProjectName: aiFoundryProjectName
     principalId: principalId
     principalType: principalType

@@ -1,17 +1,24 @@
-# Seattle Hotel Agent
+# Internal HR Benefits Agent
 
-A sample AI agent built with [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) that helps users find hotels in Seattle. This project is designed as an `azd` starter template for deploying hosted AI agents to [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/).
-
-> **Blog post:** [Azure Developer CLI (azd): Debug hosted AI agents from your terminal](https://devblogs.microsoft.com/azure-sdk/azd-ai-agent-logs-status/)
+A sample AI agent built with [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) that helps employees with HR benefits questions. This project is designed as an `azd` starter template for deploying hosted AI agents to [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/).
 
 ## What it does
 
-The agent uses a simulated hotel database and a tool-calling pattern to:
+The agent uses company HR documents (via Azure AI Search) and tool-calling to:
 
-- Accept natural-language requests about Seattle hotels
-- Ask clarifying questions about dates and budget
-- Call the `get_available_hotels` tool to find matching options
-- Present results in a conversational format
+- Answer questions about employee benefits (health insurance, dental, vision, 401k, etc.)
+- Look up enrollment deadlines and dates
+- Search the web for current information when the knowledge base doesn't have the answer
+- Run code via Code Interpreter for data analysis tasks
+
+## Architecture
+
+The agent supports two modes for knowledge base integration, controlled by the `FOUNDRY_IQ_CONTEXT_MODE` environment variable:
+
+- **`context_provider`** — Uses `AzureAISearchContextProvider` to inject KB results into context automatically before each turn
+- **`kb_mcp_endpoint`** (default) — Uses `MCPStreamableHTTPTool` to connect to the KB's MCP endpoint, letting the model decide when to search
+
+Both modes also include Foundry built-in tools (web search, code interpreter) when running in the hosted environment.
 
 ## Prerequisites
 
@@ -19,34 +26,43 @@ The agent uses a simulated hotel database and a tool-calling pattern to:
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - [Azure Developer CLI (azd) 1.23.7+](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 - An [Azure subscription](https://azure.microsoft.com/free/)
-- A [Microsoft Foundry](https://ai.azure.com/) project with a deployed model (e.g., `gpt-5.2`)
 
 ## Quick start
 
 ### Deploy to Azure
 
 ```bash
-azd init -t puicchan/seattle-hotel-agent
+azd auth login
 azd ai agent init
 azd up
 ```
 
-During `azd ai agent init`, you'll be prompted to choose a model. You can:
+During `azd ai agent init`, you'll be prompted to choose a model. Select `gpt-5.2` or another supported model.
 
-- **Deploy a new model** — select `gpt-5.2` (or another supported model)
-- **Connect to an existing model** — make sure the deployment name matches `AZURE_AI_MODEL_DEPLOYMENT_NAME` in your `.env`
-- **Skip model setup** — configure it manually later
+> **Region:** The template restricts deployment to regions that support all features (Responses API, evaluations, red teaming): `eastus2`, `francecentral`, `northcentralus`, `swedencentral`.
 
-> **Note:** If you use a model deployment name other than `gpt-5.2`, update `AZURE_AI_MODEL_DEPLOYMENT_NAME` in your `.env` to match.
+### Set up the knowledge base
+
+After provisioning, create the search indexes and knowledge base:
+
+```bash
+./write_dot_env.sh  # or .\write_dot_env.ps1 on Windows
+uv run python infra/create-search-indexes.py \
+    --endpoint "$AZURE_AI_SEARCH_SERVICE_ENDPOINT" \
+    --openai-endpoint "$AZURE_OPENAI_ENDPOINT" \
+    --openai-model-deployment "$AZURE_AI_MODEL_DEPLOYMENT_NAME"
+```
+
+This creates:
+- `hrdocs` and `healthdocs` search indexes with sample data
+- A single knowledge base (`zava-company-kb`) with both indexes as knowledge sources
 
 ### Run locally
 
-1. Copy `.env.sample` to `.env`, then set both required variables:
-    - `AZURE_AI_PROJECT_ENDPOINT`
-    - `AZURE_AI_MODEL_DEPLOYMENT_NAME`
+1. Sync your `.env` from the azd environment:
 
     ```bash
-    cp .env.sample .env
+    ./write_dot_env.sh
     ```
 
 2. Start the local hosted-agent server:
@@ -55,22 +71,35 @@ During `azd ai agent init`, you'll be prompted to choose a model. You can:
     azd ai agent run
     ```
 
-    This starts the local server on `http://localhost:8088`.
-
 3. Invoke the agent from another terminal:
 
     ```bash
-    azd ai agent invoke --local "hi agent"
+    azd ai agent invoke --local "What benefits are there, and when do I need to enroll by?"
     ```
 
-4. Or test it with any HTTP client:
+### Deploy the agent
 
-    ```http
-    POST http://localhost:8088/responses
-    Content-Type: application/json
+```bash
+azd deploy
+```
 
-    {"input": "Find me a hotel near Pike Place Market for this weekend"}
-    ```
+## Evaluation scripts
+
+Scripts for quality evaluation, red teaming, and scheduled runs are in `scripts/`:
+
+| Script | Description |
+|--------|-------------|
+| `scripts/quality_eval.py` | Run quality evaluation (task adherence, groundedness, relevance) |
+| `scripts/red_team_scan.py` | Run a one-time red team scan with attack strategies |
+| `scripts/scheduled_eval.py` | Set up daily quality evaluation schedule |
+| `scripts/scheduled_red_team.py` | Set up daily red team schedule |
+
+```bash
+uv run scripts/quality_eval.py
+uv run scripts/red_team_scan.py
+```
+
+> **Note:** Red teaming requires a supported region (East US 2, Sweden Central, etc.). See [evaluation region support](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network).
 
 ## Debug with `azd`
 
@@ -85,48 +114,34 @@ azd ai agent monitor
 
 # Stream logs in real time
 azd ai agent monitor -f
-
-# View system-level logs
-azd ai agent monitor --type system
 ```
 
-See the [blog post](https://devblogs.microsoft.com/azure-sdk/azd-ai-agent-logs-status/) for more details.
+## Observability
 
-## Foundry IQ (Azure AI Search) integration
+The agent exports OpenTelemetry traces to Application Insights when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set (handled automatically by the hosted agent server).
 
-Relevant integration pieces from your `python-foundryagent-demos` repo are now included:
+To enable sensitive data in traces (tool call arguments, prompts, responses), set `enable_sensitive_data=True` in the `enable_instrumentation()` call in `main.py`. This is useful for debugging but should be disabled in production.
 
-- Post-provision hooks: `infra/hooks/postprovision.sh` and `infra/hooks/postprovision.ps1`
-- Indexing script: `infra/create-search-indexes.py`
-- Sample index data and schema: `data/index-data/`
-- Runtime AI Search context provider wiring in hosted app: `main.py` (optional, env-driven)
+To query traces in Application Insights:
 
-What happens on `azd up`:
-
-1. The post-provision hook runs `infra/create-search-indexes.py` with keyless Microsoft Entra auth (`DefaultAzureCredential`).
-2. It creates/updates `hrdocs` and `healthdocs` indexes.
-3. It uploads the JSONL documents from `data/index-data/`.
-
-If you need to rerun indexing manually:
-
-```bash
-SEARCH_ENDPOINT="https://${AZURE_AI_SEARCH_SERVICE_NAME}.search.windows.net"
-
-uv run python infra/create-search-indexes.py \
-    --endpoint "$SEARCH_ENDPOINT" \
-    --openai-endpoint "$AZURE_OPENAI_ENDPOINT" \
-    --data-dir data/index-data
+```kql
+dependencies
+| where timestamp > ago(1h)
+| where customDimensions has "gen_ai.operation.name"
+| extend opName = tostring(customDimensions["gen_ai.operation.name"])
+| extend toolName = tostring(customDimensions["gen_ai.tool.name"])
+| extend toolArgs = tostring(customDimensions["gen_ai.tool.call.arguments"])
+| project timestamp, name, opName, toolName, toolArgs
+| order by timestamp desc
 ```
 
-If needed, you can still use API-key auth by adding `--admin-key <search-admin-key>`.
+## Environment variables
 
-To enable AI Search knowledge retrieval in this hosted app (`main.py`), set:
-
-- `AZURE_AI_SEARCH_SERVICE_ENDPOINT`
-- `AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME`
-
-When both are present, the app adds an `AzureAISearchContextProvider`
-(`mode="agentic"`) and provides retrieved KB context directly to the model.
-
-Environment variable naming notes for the `azd ai` extension are documented at:
-https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/extensions/azure-ai-foundry-extension#manage-environment-variables
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AZURE_AI_PROJECT_ENDPOINT` | Yes | Foundry project endpoint |
+| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Yes | Model deployment name (e.g., `gpt-5.2`) |
+| `AZURE_AI_SEARCH_SERVICE_ENDPOINT` | Yes | Azure AI Search endpoint |
+| `AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME` | Yes | Knowledge base name (default: `zava-company-kb`) |
+| `FOUNDRY_IQ_CONTEXT_MODE` | No | `context_provider` or `kb_mcp_endpoint` (default) |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | No | App Insights connection string for tracing |

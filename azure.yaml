@@ -5,7 +5,7 @@ requiredVersions:
         azure.ai.agents: '>=0.1.0-preview'
 name: ai-foundry-starter-basic
 services:
-    seattle-hotel-agent:
+    internal-hr-benefits-agent:
         project: .
         host: azure.ai.agent
         language: docker
