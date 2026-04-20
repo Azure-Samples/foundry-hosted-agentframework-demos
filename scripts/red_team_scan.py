@@ -1,4 +1,4 @@
-"""Run an AI Red Teaming scan against the internal-hr-benefits-agent.
+"""Run an AI Red Teaming scan against the agent.
 
 Based on:
 https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud?tabs=python
@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-AGENT_NAME = "internal-hr-benefits-agent" # matches agent.yaml
+AGENT_NAME = "hosted-agentframework-agent" # matches agent.yaml
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "red_team_output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 

@@ -1,4 +1,4 @@
-"""Set up a daily scheduled evaluation for the internal-hr-benefits-agent.
+"""Set up a daily scheduled evaluation for the agent.
 
 Creates an evaluation + eval run definition, then schedules it to run daily at 9 AM UTC.
 
@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-AGENT_NAME = os.environ.get("AGENT_NAME", "internal-hr-benefits-agent")
+AGENT_NAME = os.environ.get("AGENT_NAME", "hosted-agentframework-agent")
 SCHEDULE_ID = f"{AGENT_NAME}-daily-quality-eval"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "eval_output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)

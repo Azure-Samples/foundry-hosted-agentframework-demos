@@ -18,7 +18,6 @@ from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
-from azure.ai.agentserver.responses import InMemoryResponseProvider
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from pydantic import Field
@@ -135,6 +134,19 @@ def main():
 
     credential = DefaultAzureCredential()
 
+    # Log identity info for debugging RBAC issues
+    try:
+        import base64
+        search_token = credential.get_token("https://search.azure.com/.default")
+        # Decode JWT payload (middle segment) to get oid/appid/sub
+        payload = search_token.token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)  # pad base64
+        claims = json.loads(base64.b64decode(payload))
+        logger.info("Search token identity: oid=%s appid=%s sub=%s",
+                     claims.get("oid"), claims.get("appid"), claims.get("sub"))
+    except Exception as e:
+        logger.warning("Could not decode search token: %s", e)
+
     def _add_auth(request: httpx.Request) -> None:
         token = credential.get_token("https://search.azure.com/.default")
         request.headers["Authorization"] = f"Bearer {token.token}"
@@ -169,7 +181,6 @@ def main():
         default_options={"store": False},
     )
 
-    #server = ResponsesHostServer(agent, store=InMemoryResponseProvider())
     server = ResponsesHostServer(agent)
     logger.info("Internal HR Helper Server running on http://localhost:8088")
     logger.info('Try: azd ai agent invoke --local "What PerksPlus benefits are there, and when do I need to enroll by?"')

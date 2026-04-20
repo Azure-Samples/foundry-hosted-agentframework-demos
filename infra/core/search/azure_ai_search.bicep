@@ -140,6 +140,18 @@ resource aiServicesToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssig
   }
 }
 
+// AI Services account needs Search access - Index Data Contributor
+// Hosted agent containers use the AI Services account's managed identity via DefaultAzureCredential
+resource aiAccountToSearchDataRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(aiServicesAccountName)) {
+  name: guid(searchService.id, aiServicesAccountName, 'Search Index Data Contributor', uniqueString(deployment().name))
+  scope: searchService
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7') // Search Index Data Contributor
+    principalId: aiAccount.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // User permissions - Search Index Data Contributor
 resource userToSearchRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(searchService.id, principalId, 'Search Index Data Contributor', uniqueString(deployment().name))

@@ -1,4 +1,4 @@
-"""Set up a daily scheduled red-teaming run for the internal-hr-benefits-agent.
+"""Set up a daily scheduled red-teaming run for the agent.
 
 Creates a red-team evaluation + taxonomy, then schedules the run daily at 9 AM UTC.
 
@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-AGENT_NAME = os.environ.get("AGENT_NAME", "internal-hr-benefits-agent")
+AGENT_NAME = os.environ.get("AGENT_NAME", "hosted-agentframework-agent")
 SCHEDULE_ID = f"{AGENT_NAME}-daily-red-team"
 
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]

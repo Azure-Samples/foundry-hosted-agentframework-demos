@@ -5,7 +5,7 @@ requiredVersions:
         azure.ai.agents: '>=0.1.0-preview'
 name: ai-foundry-starter-basic
 services:
-    internal-hr-benefits-agent:
+    hosted-agentframework-agent:
         project: .
         host: azure.ai.agent
         language: docker
@@ -32,13 +32,22 @@ infra:
     provider: bicep
     path: ./infra
 hooks:
+    postdeploy:
+        windows:
+            shell: pwsh
+            run: infra/hooks/postdeploy.ps1
+            interactive: true
+        posix:
+            kind: sh
+            shell: sh
+            run: infra/hooks/postdeploy.sh
+            interactive: true
     postprovision:
         windows:
             shell: pwsh
             run: infra/hooks/postprovision.ps1
             interactive: true
         posix:
-            name: postprovision
             kind: sh
             shell: sh
             run: infra/hooks/postprovision.sh
