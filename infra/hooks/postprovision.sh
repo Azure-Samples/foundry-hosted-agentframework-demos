@@ -17,3 +17,9 @@ uv run python infra/create-search-indexes.py \
     --data-dir "data/index-data"
 
 echo "Foundry IQ postprovision complete."
+
+echo "Creating Foundry Toolbox..."
+
+uv run python infra/create-toolbox.py
+
+echo "Foundry Toolbox postprovision complete."

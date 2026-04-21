@@ -90,8 +90,7 @@ class KnowledgeBaseRetrieveTool:
         except Exception as e:
             return f"Error: {e}"
         if result.response and result.response[0].content:
-            text = result.response[0].content[0].text
-            return text
+            return result.response[0].content[0].text
         return "No results found."
 
 

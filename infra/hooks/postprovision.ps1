@@ -16,3 +16,9 @@ uv run python infra/create-search-indexes.py `
     --data-dir "data/index-data"
 
 Write-Host "Foundry IQ postprovision complete."
+
+Write-Host "Creating Foundry Toolbox..."
+
+uv run python infra/create-toolbox.py
+
+Write-Host "Foundry Toolbox postprovision complete."

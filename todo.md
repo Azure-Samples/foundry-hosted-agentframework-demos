@@ -77,13 +77,13 @@ relies on `azd ai agent show` JSON parsing, and uses imperative `az` CLI instead
 2. Can the platform auto-assign common roles (like Search Index Data Reader) based on project connections?
 3. Is there a planned ARM resource type for hosted agents that would include the identity?
 
-## Duplicate log lines: `logging.basicConfig` + `enable_instrumentation`
+## Duplicate log lines in hosted container
 
-`logging.basicConfig(level=logging.DEBUG)` adds one handler, then `enable_instrumentation()` adds another.
-Every WARNING/INFO line appears twice with different formats.
+Agent framework logs appear twice in Foundry container logs with different formats:
+- `INFO:agent_framework:...` (Python's default format)
+- `2026-04-20 21:41:33,411 INFO agent_framework: ...` (timestamped format)
 
-Using `force=True` on `basicConfig` fixes the duplicates but may remove the instrumentation handler
-needed for App Insights / trace export.
+This only happens in the hosted container, not locally. The Foundry hosting platform's
+log collector likely reformats and re-emits stderr lines. Not a Python handler issue.
 
-**Ask the MAF team:** What's the recommended pattern for combining `basicConfig` with `enable_instrumentation`?
-Should we skip `basicConfig` entirely when instrumentation is enabled?
+**Ask Hosted Agents team:** Is the container log collector intentionally duplicating stderr?

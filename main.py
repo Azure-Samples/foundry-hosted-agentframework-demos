@@ -14,11 +14,11 @@ from datetime import date
 from typing import Annotated
 
 import httpx
-from agent_framework import Agent
+from agent_framework import Agent, MCPStreamableHTTPTool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 from pydantic import Field
 
@@ -33,6 +33,7 @@ PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 SEARCH_SERVICE_ENDPOINT = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
 KNOWLEDGE_BASE_NAME = os.environ["AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME"]
+TOOLBOX_NAME = os.environ.get("CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-tools")
 
 
 def get_current_date() -> str:
@@ -47,6 +48,18 @@ def get_enrollment_deadline_info() -> str:
         "benefits_enrollment_opens": "2026-11-11",
         "benefits_enrollment_closes": "2026-11-30"
     }
+
+
+class _ToolboxAuth(httpx.Auth):
+    """httpx Auth that injects a fresh bearer token for the Foundry Toolbox MCP endpoint."""
+
+    def __init__(self, token_provider) -> None:
+        self._token_provider = token_provider
+
+    def auth_flow(self, request):
+        """Add Authorization header with a fresh token on every request."""
+        request.headers["Authorization"] = f"Bearer {self._token_provider()}"
+        yield request
 
 
 class KnowledgeBaseMCPTool:
@@ -144,6 +157,22 @@ def main():
     )
     kb_tool = KnowledgeBaseMCPTool(http_client, mcp_url)
 
+    # Foundry Toolbox MCP tool (replaces individual web_search / code_interpreter tools)
+    toolbox_endpoint = f"{PROJECT_ENDPOINT.rstrip('/')}/toolboxes/{TOOLBOX_NAME}/mcp?api-version=v1"
+    logger.info("Using Foundry Toolbox MCP at %s", toolbox_endpoint)
+    token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
+    toolbox_http_client = httpx.AsyncClient(
+        auth=_ToolboxAuth(token_provider),
+        headers={"Foundry-Features": "Toolboxes=V1Preview"},
+        timeout=120.0,
+    )
+    toolbox_mcp_tool = MCPStreamableHTTPTool(
+        name="toolbox",
+        url=toolbox_endpoint,
+        http_client=toolbox_http_client,
+        load_prompts=False,
+    )
+
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
         model=MODEL_DEPLOYMENT_NAME,
@@ -162,23 +191,16 @@ def main():
             kb_tool.retrieve,
             get_enrollment_deadline_info,
             get_current_date,
-            client.get_web_search_tool(),
-            client.get_code_interpreter_tool(),
+            toolbox_mcp_tool,
         ],
         default_options={"store": False},
     )
 
     server = ResponsesHostServer(agent)
-    logger.info("Internal HR Helper Server running on http://localhost:8088")
-    logger.info('Try: azd ai agent invoke --local "What PerksPlus benefits are there, and when do I need to enroll by?"')
     server.run()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, force=True)
     logger.setLevel(logging.INFO)
-    # Silence noisy HTTP/telemetry loggers
-    #for name in ("azure.core.pipeline", "azure.monitor.opentelemetry", "urllib3", "azure.identity"):
-    #    logging.getLogger(name).setLevel(logging.WARNING)
 
     enable_instrumentation(enable_sensitive_data=True)
 

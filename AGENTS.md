@@ -47,6 +47,45 @@ Reference:
 
 - https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/extensions/azure-ai-foundry-extension#manage-environment-variables
 
+## Hosted agent environment variables
+
+**Reserved prefixes:** The hosted agent platform reserves the `FOUNDRY_*` and `AGENT_*`
+environment variable prefixes. Do not use these prefixes for custom variables in
+`agent.yaml` — the deploy will fail with `invalid_payload`. If you need a custom variable
+that references a Foundry concept, use a different prefix (e.g., `CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME`).
+
+**Auto-injected variables:** The platform automatically injects these variables into the
+container at runtime — do **not** set them in `agent.yaml`:
+
+- `FOUNDRY_PROJECT_ENDPOINT` — the Foundry project endpoint
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` — the App Insights connection string for tracing
+
+## Logging
+
+Do NOT call `logging.basicConfig()` in agent code that uses `ResponsesHostServer`.
+
+`ResponsesHostServer` inherits from `AgentServerHost`, which calls `configure_observability()` during
+`__init__`. That function (`azure.ai.agentserver.core._tracing`) adds its own `StreamHandler` to the
+root logger with a timestamped format. If you also call `logging.basicConfig()`, you get two
+`StreamHandler`s on root and every log line appears twice with different formats.
+
+Instead, let the agentserver handle logging setup. If you need to adjust log levels for
+specific loggers (e.g., silencing noisy SDK loggers), do that directly:
+
+```python
+logging.getLogger("azure.core.pipeline").setLevel(logging.WARNING)
+```
+
+If you need full control over logging and want to suppress the agentserver's handler, pass
+`configure_observability=None` when creating the server:
+
+```python
+server = ResponsesHostServer(agent, configure_observability=None)
+```
+
+Note: this also disables the agentserver's OTel tracing/metrics setup, so only do this
+if you're configuring observability yourself.
+
 ## Filing bugs
 
 This is where to search and file bugs for the technologies used in this repository:
