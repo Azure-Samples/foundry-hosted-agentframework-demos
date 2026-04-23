@@ -25,6 +25,7 @@ import os
 from datetime import date
 from typing import Any
 
+import mcp.types
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework.openai import OpenAIChatClient
 from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
@@ -37,6 +38,21 @@ load_dotenv(override=True)
 
 console = Console()
 logger = logging.getLogger("stage2")
+
+
+# ---------------------------------------------------------------------------
+# Workaround: Azure AI Search KB MCP returns resource content with uri: null
+# or uri: "", which fails pydantic AnyUrl validation in the MCP SDK.
+# Relax the uri field to accept any string (or None) so parsing succeeds.
+# ---------------------------------------------------------------------------
+for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents, mcp.types.BlobResourceContents]:
+    _cls.model_fields["uri"].annotation = str | None
+    _cls.model_fields["uri"].default = None
+    _cls.model_fields["uri"].metadata = []
+for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents,
+             mcp.types.BlobResourceContents, mcp.types.EmbeddedResource,
+             mcp.types.CallToolResult]:
+    _cls.model_rebuild(force=True)
 
 
 @tool
