@@ -1,12 +1,11 @@
 """
 Workflow demo: Multi-agent workflow using Agent Framework's WorkflowBuilder.
 
-Three agents in a chain:
-    writer → legal_reviewer → formatter
+Two agents in a chain:
+    writer → formatter
 
-The writer creates a slogan, the legal reviewer checks it, and the formatter
-styles it for terminal output. Each agent only sees the output of the
-previous agent (context_mode="last_agent").
+The writer drafts content and the formatter styles it with Markdown and emojis.
+Each agent only sees the output of the previous agent (context_mode="last_agent").
 """
 
 import os
@@ -35,31 +34,26 @@ def main():
 
     writer_agent = Agent(
         client=client,
-        name="writer",
-        instructions="You are an excellent slogan writer. You create new slogans based on the given topic.",
-    )
-
-    legal_agent = Agent(
-        client=client,
-        name="legal_reviewer",
+        name="Writer",
         instructions=(
-            "You are an excellent legal reviewer. "
-            "Make necessary corrections to the slogan so that it is legally compliant."
+            "You are a concise content writer. "
+            "Write a clear, engaging short article (2-3 paragraphs) based on the user's topic. "
+            "Focus on accuracy and readability."
         ),
     )
 
     format_agent = Agent(
         client=client,
-        name="formatter",
+        name="Formatter",
         instructions=(
-            "You are an excellent content formatter. "
-            "You take the slogan and format it in Markdown with bold text and decorative elements. "
-            "Do not use ANSI escape codes or terminal color codes."
+            "You are an expert content formatter. "
+            "Take the provided text and format it with Markdown (bold, headers, lists) "
+            "and relevant emojis to make it visually engaging. "
+            "Preserve the original meaning and content."
         ),
     )
 
     writer_executor = AgentExecutor(writer_agent, context_mode="last_agent")
-    legal_executor = AgentExecutor(legal_agent, context_mode="last_agent")
     format_executor = AgentExecutor(format_agent, context_mode="last_agent")
 
     workflow_agent = (
@@ -67,8 +61,7 @@ def main():
             start_executor=writer_executor,
             output_executors=[format_executor],
         )
-        .add_edge(writer_executor, legal_executor)
-        .add_edge(legal_executor, format_executor)
+        .add_edge(writer_executor, format_executor)
         .build()
         .as_agent()
     )

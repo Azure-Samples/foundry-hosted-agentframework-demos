@@ -13,7 +13,7 @@ from datetime import date
 
 import httpx
 import mcp.types
-from agent_framework import Agent, MCPStreamableHTTPTool
+from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
@@ -32,17 +32,19 @@ MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 TOOLBOX_NAME = os.environ.get("CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-tools")
 
 
+@tool
 def get_current_date() -> str:
     """Return the current date in ISO format."""
     logger.info("Fetching current date")
     return date.today().isoformat()
 
+@tool
 def get_enrollment_deadline_info() -> str:
     """Return enrollment timeline details for health insurance plans."""
     logger.info("Fetching enrollment deadline information")
     return {
-        "benefits_enrollment_opens": "2026-11-11",
-        "benefits_enrollment_closes": "2026-11-30"
+        "enrollment_opens": "2026-11-11",
+        "enrollment_closes": "2026-11-30"
     }
 
 

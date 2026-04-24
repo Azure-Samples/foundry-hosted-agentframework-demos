@@ -16,8 +16,6 @@ services:
                 resources:
                     cpu: "1"
                     memory: 2Gi
-                scale:
-                    maxReplicas: 1
             startupCommand: python stage4_foundry_hosted.py
     hosted-agentframework-workflow:
         project: ./workflows
@@ -30,8 +28,6 @@ services:
                 resources:
                     cpu: "1"
                     memory: 2Gi
-                scale:
-                    maxReplicas: 1
             startupCommand: python stage4_foundry_hosted_as_agent.py
 infra:
     provider: bicep

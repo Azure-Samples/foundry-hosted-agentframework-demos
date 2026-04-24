@@ -33,11 +33,8 @@ Both modes also include Foundry built-in tools (web search, code interpreter) wh
 
 ```bash
 azd auth login
-azd ai agent init
 azd up
 ```
-
-During `azd ai agent init`, you'll be prompted to choose a model. Select `gpt-5.2` or another supported model.
 
 > **Region:** The template restricts deployment to regions that support all features (Responses API, evaluations, red teaming): `eastus2`, `francecentral`, `northcentralus`, `swedencentral`.
 

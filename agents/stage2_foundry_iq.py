@@ -60,8 +60,8 @@ def get_enrollment_deadline_info() -> dict:
     """Return enrollment timeline details for health insurance plans."""
     logger.info("[tool] get_enrollment_deadline_info()")
     return {
-        "benefits_enrollment_opens": "2026-11-11",
-        "benefits_enrollment_closes": "2026-11-30",
+        "enrollment_opens": "2026-11-11",
+        "enrollment_closes": "2026-11-30",
     }
 
 

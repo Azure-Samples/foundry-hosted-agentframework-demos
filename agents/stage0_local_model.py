@@ -34,15 +34,15 @@ def get_enrollment_deadline_info() -> dict:
     """Return enrollment timeline details for health insurance plans."""
     logger.info("[tool] get_enrollment_deadline_info()")
     return {
-        "benefits_enrollment_opens": "2026-11-11",
-        "benefits_enrollment_closes": "2026-11-30",
+        "enrollment_opens": "2026-11-11",
+        "enrollment_closes": "2026-11-30",
     }
 
 
 # Ollama exposes an OpenAI-compatible endpoint; no API key needed.
 client = OpenAIChatClient(
     base_url="http://localhost:11434/v1/",
-    api_key="ollama",  # any non-empty string
+    api_key="no-key-needed",  # any non-empty string
     model="qwen3.5:4b",
 )
 

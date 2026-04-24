@@ -139,7 +139,8 @@ output AZURE_AI_ACCOUNT_NAME string = aiProject.outputs.aiServicesAccountName
 output AZURE_AI_PROJECT_NAME string = aiProject.outputs.projectName
 
 // Endpoints
-output FOUNDRY_PROJECT_ENDPOINT string = aiProject.outputs.FOUNDRY_PROJECT_ENDPOINT
+output AZURE_AI_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT // Required by azd deploy
+output FOUNDRY_PROJECT_ENDPOINT string = aiProject.outputs.AZURE_AI_PROJECT_ENDPOINT // Future: https://github.com/Azure/azure-dev/issues/7905
 output AZURE_AI_MODEL_DEPLOYMENT_NAME string = defaultModelDeploymentName
 output AZURE_OPENAI_ENDPOINT string = aiProject.outputs.AZURE_OPENAI_ENDPOINT
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
