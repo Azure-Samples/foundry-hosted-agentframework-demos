@@ -13,3 +13,5 @@ environment_variables:
       value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
     - name: CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME
       value: hr-agent-tools
+    - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
+      value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}

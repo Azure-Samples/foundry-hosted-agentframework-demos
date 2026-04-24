@@ -19,19 +19,19 @@ from azure.ai.projects.models import (
     EvaluationTaxonomy,
     RiskCategory,
 )
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-AGENT_NAME = "hosted-agentframework-agent" # matches agent.yaml
+AGENT_NAME = os.environ.get("AGENT_NAME", "hosted-agentframework-agent")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "red_team_output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
-credential = AzureCliCredential(process_timeout=60)
+credential = DefaultAzureCredential()
 project_client = AIProjectClient(endpoint=project_endpoint, credential=credential)
 
 # ---------------------------------------------------------------------------
@@ -141,6 +141,8 @@ while True:
     time.sleep(10)
 
 print(f"\nRun finished — status: {run.status}")
+if hasattr(run, "report_url") and run.report_url:
+    print(f"Report URL: {run.report_url}")
 
 # ---------------------------------------------------------------------------
 # 6. Save output items

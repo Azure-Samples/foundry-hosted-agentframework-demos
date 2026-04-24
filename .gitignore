@@ -17,6 +17,10 @@
 # Python packaging artifacts
 *.egg-info/
 
+# Generated red-team scan outputs
+scripts/red_team_output/
+scripts/eval_output/*.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

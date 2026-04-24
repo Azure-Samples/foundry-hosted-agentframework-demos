@@ -9,14 +9,18 @@ azd ai agent run
 
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from datetime import date
 
 import httpx
 import mcp.types
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
+from agent_framework._middleware import ChatContext
+from agent_framework._types import ChatResponse, Message
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
+from agent_framework_openai._exceptions import OpenAIContentFilterException
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 
@@ -30,6 +34,12 @@ logger = logging.getLogger("hr-agent")
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 TOOLBOX_NAME = os.environ.get("CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-tools")
+SEARCH_ENDPOINT = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
+KB_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "zava-company-kb")
+CONTENT_FILTER_MESSAGE = (
+    "I can’t help with that request because it violates content safety policies. "
+    "If you have a safer or policy-compliant version of the question, I can help with that instead."
+)
 
 
 @tool
@@ -58,6 +68,20 @@ class ToolboxAuth(httpx.Auth):
         """Add Authorization header with a fresh token on every request."""
         request.headers["Authorization"] = f"Bearer {self._token_provider()}"
         yield request
+
+
+async def content_filter_middleware(
+    context: ChatContext, call_next: Callable[[], Awaitable[None]]
+) -> None:
+    """Convert model-side content-filter blocks into a friendly assistant response."""
+    try:
+        await call_next()
+    except OpenAIContentFilterException:
+        logger.info("Returning friendly refusal for content-filtered prompt")
+        context.result = ChatResponse(
+            messages=Message("assistant", [CONTENT_FILTER_MESSAGE]),
+            finish_reason="stop",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -92,6 +116,24 @@ def main():
         name="toolbox",
         url=toolbox_endpoint,
         http_client=toolbox_http_client,
+        allowed_tools=["web_search", "code_interpreter"],
+        load_prompts=False,
+    )
+
+    # Direct KB MCP connection (workaround: toolbox names KB tool with a dot,
+    # which the hosted agent Responses API rejects)
+    kb_mcp_url = f"{SEARCH_ENDPOINT.rstrip('/')}/knowledgebases/{KB_NAME}/mcp?api-version=2025-11-01-Preview"
+    logger.info("Using KB MCP at %s", kb_mcp_url)
+    search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")
+    kb_http_client = httpx.AsyncClient(
+        auth=ToolboxAuth(search_token_provider),
+        timeout=120.0,
+    )
+    kb_mcp_tool = MCPStreamableHTTPTool(
+        name="knowledge_base",
+        url=kb_mcp_url,
+        http_client=kb_http_client,
+        allowed_tools=["knowledge_base_retrieve"],
         load_prompts=False,
     )
 
@@ -99,6 +141,7 @@ def main():
         project_endpoint=PROJECT_ENDPOINT,
         model=MODEL_DEPLOYMENT_NAME,
         credential=credential,
+        middleware=[content_filter_middleware],
     )
 
     agent = Agent(
@@ -107,12 +150,15 @@ def main():
         instructions="""You are an internal HR helper focused on employee benefits and company information.
         Use the knowledge base tool to answer questions and ground all answers in provided context.
         You can use web search to look up current information when the knowledge base does not have the answer.
-        You can use these tools if the user needs information on benefits deadlines: get_enrollment_deadline_info, get_current_date.
-        If you cannot answer a question, explain that you do not have available information to fully answer the question.""",
+        You can use these tools if the user needs information on benefits deadlines:
+        get_enrollment_deadline_info, get_current_date.
+        If you cannot answer a question, explain that you do not have available information
+        to fully answer the question.""",
         tools=[
             get_enrollment_deadline_info,
             get_current_date,
             toolbox_mcp_tool,
+            kb_mcp_tool,
         ],
         default_options={"store": False},
     )

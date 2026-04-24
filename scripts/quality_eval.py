@@ -14,19 +14,19 @@ import os
 import time
 
 from azure.ai.projects import AIProjectClient
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-AGENT_NAME = "hosted-agentframework-agent" # matches agent.yaml
+AGENT_NAME = os.environ.get("AGENT_NAME", "hosted-agentframework-agent")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "eval_output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
-credential = AzureCliCredential(process_timeout=60)
+credential = DefaultAzureCredential()
 project_client = AIProjectClient(endpoint=project_endpoint, credential=credential)
 
 # ---------------------------------------------------------------------------
@@ -159,7 +159,6 @@ eval_run = openai_client.evals.runs.create(
             ],
         },
         "target": {
-            # WIP - evals team is working on it - first half of next week
             "type": "azure_ai_agent",
             "name": AGENT_NAME,
             "version": str(agent_version.version),

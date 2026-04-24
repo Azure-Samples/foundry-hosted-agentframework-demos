@@ -22,7 +22,7 @@ from azure.ai.projects.models import (
     RiskCategory,
     Schedule,
 )
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -33,7 +33,7 @@ SCHEDULE_ID = f"{AGENT_NAME}-daily-red-team"
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
-credential = AzureCliCredential(process_timeout=60)
+credential = DefaultAzureCredential()
 project_client = AIProjectClient(endpoint=project_endpoint, credential=credential)
 openai_client = project_client.get_openai_client()
 
@@ -158,6 +158,6 @@ schedule_response = project_client.beta.schedules.create_or_update(
     schedule=schedule,
 )
 print(f"Schedule created: {schedule_response.schedule_id}")
-print(f"  Trigger: daily at 9 AM UTC")
+print("  Trigger: daily at 9 AM UTC")
 print(f"  Evaluation: {evaluation.id}")
 print(f"  Agent: {AGENT_NAME} v{agent_version.version}")

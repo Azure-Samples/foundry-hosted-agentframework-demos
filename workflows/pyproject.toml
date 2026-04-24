@@ -16,6 +16,7 @@ dependencies = [
     "azure-monitor-opentelemetry>=1.8.7",
     "mcp>=1.27.0",
     "rich>=13.0.0",
+    "azure-ai-evaluation[redteam]>=1.16.5",
 ]
 
 [tool.uv]

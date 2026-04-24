@@ -45,7 +45,8 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.1.1' =
       {
         principalId: principalId
         principalType: principalType
-        roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+        // Container Registry Tasks Contributor — build images with ACR tasks and push container images
+        roleDefinitionIdOrName: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'fb382eab-e894-4461-af04-94435c366c3f')
       }
       // TODO SEPARATELY
       {

@@ -97,7 +97,7 @@ module applicationInsights '../monitor/applicationinsights.bicep' = if (shouldCr
     location: location
     tags: tags
     name: 'appi-${resourceToken}'
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+    logAnalyticsWorkspaceId: logAnalytics!.outputs.id
   }
 }
 
@@ -170,15 +170,15 @@ resource appInsightConnection 'Microsoft.CognitiveServices/accounts/projects/con
   name: 'appi-connection'
   properties: {
     category: 'AppInsights'
-    target: applicationInsights.outputs.id
+    target: applicationInsights!.outputs.id
     authType: 'ApiKey'
     isSharedToAll: true
     credentials: {
-      key: applicationInsights.outputs.connectionString
+      key: applicationInsights!.outputs.connectionString
     }
     metadata: {
       ApiType: 'Azure'
-      ResourceId: applicationInsights.outputs.id
+      ResourceId: applicationInsights!.outputs.id
     }
   }
 }
@@ -218,36 +218,30 @@ module aiConnections './connection.bicep' = [for (connection, index) in connecti
   }
 }]
 
-resource localUserAiDeveloperRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: resourceGroup()
-  name: guid(subscription().id, resourceGroup().id, principalId, '64702f94-c441-49e6-a78b-ef80e0188fee')
-  properties: {
-    principalId: principalId
-    principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '64702f94-c441-49e6-a78b-ef80e0188fee')
-  }
-}
-
-resource localUserCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: resourceGroup()
-  name: guid(subscription().id, resourceGroup().id, principalId, 'a97b65f3-24c7-4388-baec-2e87135dc908')
-  properties: {
-    principalId: principalId
-    principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-  }
-}
-
-resource projectCognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: aiAccount
-  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+// Log Analytics Reader for the Foundry Project managed identity.
+// Required for continuous evaluation to query Application Insights traces.
+// Gated on enableMonitoring so it applies for both new and existing App Insights resources.
+resource projectLogAnalyticsReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableMonitoring) {
+  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, '73c42c96-874c-492b-b04d-ab87d138a893')
   properties: {
     principalId: aiAccount::project.identity.principalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+    // Log Analytics Reader
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '73c42c96-874c-492b-b04d-ab87d138a893')
   }
 }
 
+// Azure AI User for the developer, scoped to the Foundry Project.
+// Project scope is sufficient for creating/running agents and calling models via the project endpoint.
+resource localUserAzureAIUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: aiAccount::project
+  name: guid(subscription().id, resourceGroup().id, principalId, '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+  properties: {
+    principalId: principalId
+    principalType: principalType
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
+  }
+}
 
 // All connections are now created directly within their respective resource modules
 // using the centralized ./connection.bicep module
@@ -376,8 +370,8 @@ output aiServicesAccountName string = aiAccount.name
 output aiServicesProjectName string = aiAccount::project.name
 output aiServicesPrincipalId string = aiAccount.identity.principalId
 output projectName string = aiAccount::project.name
-output APPLICATIONINSIGHTS_CONNECTION_STRING string = shouldCreateAppInsights ? applicationInsights.outputs.connectionString : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsConnectionString : '')
-output APPLICATIONINSIGHTS_RESOURCE_ID string = shouldCreateAppInsights ? applicationInsights.outputs.id : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsResourceId : '')
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = shouldCreateAppInsights ? applicationInsights!.outputs.connectionString : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsConnectionString : '')
+output APPLICATIONINSIGHTS_RESOURCE_ID string = shouldCreateAppInsights ? applicationInsights!.outputs.id : (hasExistingAppInsightsConnectionString ? existingApplicationInsightsResourceId : '')
 
 // Grouped dependent resources outputs
 output dependentResources object = {

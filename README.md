@@ -82,21 +82,90 @@ azd deploy
 
 ## Evaluation scripts
 
-Scripts for quality evaluation, red teaming, and scheduled runs are in `scripts/`:
+Scripts for quality evaluation, continuous evaluation, scheduled evaluation, and red teaming are in `scripts/`:
 
 | Script | Description |
 |--------|-------------|
 | `scripts/quality_eval.py` | Run quality evaluation (task adherence, groundedness, relevance) |
-| `scripts/red_team_scan.py` | Run a one-time red team scan with attack strategies |
+| `scripts/continuous_eval.py` | Set up hourly continuous evaluation from recent agent traces |
+| `scripts/red_team_scan.py` | Attempt the hosted red-team flow; currently non-actionable for this sample |
+| `scripts/red_team_scan_local.py` | Run local-preview red teaming against `azd ai agent run` |
 | `scripts/scheduled_eval.py` | Set up daily quality evaluation schedule |
-| `scripts/scheduled_red_team.py` | Set up daily red team schedule |
+| `scripts/scheduled_red_team.py` | Placeholder for scheduled hosted red teaming once supported |
+
+### Run an on-demand quality evaluation
 
 ```bash
 uv run scripts/quality_eval.py
-uv run scripts/red_team_scan.py
+```
+
+The results are written to `scripts/eval_output/`.
+
+### Set up continuous evaluation
+
+Continuous evaluation samples recent production traces from the hosted agent and evaluates them on an hourly schedule. This is useful once the agent is deployed and receiving traffic.
+
+Prerequisites:
+
+1. Deploy the infrastructure and hosted agent:
+
+    ```bash
+    azd up
+    azd deploy
+    ```
+
+2. Generate traces by invoking the hosted agent in the Foundry playground, through the deployed agent endpoint, or with:
+
+    ```bash
+    azd ai agent invoke "What benefits are available at Zava?"
+    ```
+
+3. Create the continuous evaluation schedule:
+
+    ```bash
+    uv run scripts/continuous_eval.py
+    ```
+
+By default, `scripts/continuous_eval.py`:
+
+- Evaluates traces for `AGENT_NAME=hosted-agentframework-agent`
+- Runs hourly
+- Samples up to `CONTINUOUS_EVAL_MAX_TRACES=1000` recent traces
+- Uses the built-in `builtin.task_completion` evaluator
+
+You can override the agent name or max trace count before running it:
+
+```bash
+AGENT_NAME=hosted-agentframework-agent CONTINUOUS_EVAL_MAX_TRACES=100 uv run scripts/continuous_eval.py
+```
+
+The Bicep template grants the Foundry project managed identity Log Analytics Reader permissions when monitoring is enabled, so continuous evaluation can query Application Insights traces across repeated provisions.
+
+### Set up daily scheduled quality evaluation
+
+To run the saved test-query dataset against the hosted agent every day at 9 AM UTC:
+
+```bash
+uv run scripts/scheduled_eval.py
+```
+
+### Run local-preview red teaming
+
+Start the local agent server in one terminal:
+
+```bash
+azd ai agent run
+```
+
+Then run the local red-team scan in another terminal:
+
+```bash
+uv run scripts/red_team_scan_local.py
 ```
 
 > **Note:** Red teaming requires a supported region (East US 2, Sweden Central, etc.). See [evaluation region support](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network).
+>
+> **Current sample limitation:** Hosted-agent cloud red teaming is not supported yet for this sample. Use `scripts/red_team_scan_local.py` with a locally running agent for now, and treat `scripts/red_team_scan.py` as a future hosted path to re-enable once the service support lands.
 
 ## Debug with `azd`
 
