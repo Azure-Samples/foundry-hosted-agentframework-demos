@@ -118,8 +118,7 @@ async def main():
             tools=[get_enrollment_deadline_info, toolbox_mcp_tool],
         )
 
-        #response = await agent.run("What is the weather today in Seattle, the Zava HQ?")
-        response = await agent.run("What PerksPlus benefits are available to employees?")
+        response = await agent.run("Does PerksPlus cover scuba diving, and how does that compare to PerksPlus at other companies?")
         console.print("\n[bold]Agent answer:[/bold]")
         console.print(Markdown(response.text))
 

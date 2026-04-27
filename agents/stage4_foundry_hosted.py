@@ -21,7 +21,7 @@ from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
 from agent_framework_openai._exceptions import OpenAIContentFilterException
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from azure.identity import get_bearer_token_provider, ManagedIdentityCredential, AzureDeveloperCliCredential, ChainedTokenCredential
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
@@ -101,12 +101,14 @@ for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents,
 
 def main():
     """Main function to run the agent as a web server."""
-    credential = DefaultAzureCredential()
+    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.getenv("AZURE_CLIENT_ID"))
+    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
+    azure_credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
 
     # Foundry Toolbox MCP tool (web_search, code_interpreter, and knowledge_base_retrieve)
     toolbox_endpoint = f"{PROJECT_ENDPOINT.rstrip('/')}/toolboxes/{TOOLBOX_NAME}/mcp?api-version=v1"
     logger.info("Using Foundry Toolbox MCP at %s", toolbox_endpoint)
-    token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
+    token_provider = get_bearer_token_provider(azure_credential, "https://ai.azure.com/.default")
     toolbox_http_client = httpx.AsyncClient(
         auth=ToolboxAuth(token_provider),
         headers={"Foundry-Features": "Toolboxes=V1Preview"},
@@ -116,6 +118,8 @@ def main():
         name="toolbox",
         url=toolbox_endpoint,
         http_client=toolbox_http_client,
+        # Our toolbox includes Foundry IQ MCP KB, but that currently doesn't work.
+        # Fix should be out April 30th week. For now, just allow-list the other tools.
         allowed_tools=["web_search", "code_interpreter"],
         load_prompts=False,
     )
@@ -124,7 +128,7 @@ def main():
     # which the hosted agent Responses API rejects)
     kb_mcp_url = f"{SEARCH_ENDPOINT.rstrip('/')}/knowledgebases/{KB_NAME}/mcp?api-version=2025-11-01-Preview"
     logger.info("Using KB MCP at %s", kb_mcp_url)
-    search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")
+    search_token_provider = get_bearer_token_provider(azure_credential, "https://search.azure.com/.default")
     kb_http_client = httpx.AsyncClient(
         auth=ToolboxAuth(search_token_provider),
         timeout=120.0,
@@ -140,7 +144,7 @@ def main():
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
         model=MODEL_DEPLOYMENT_NAME,
-        credential=credential,
+        credential=azure_credential,
         middleware=[content_filter_middleware],
     )
 
@@ -149,8 +153,8 @@ def main():
         name="InternalHRHelper",
         instructions="""You are an internal HR helper focused on employee benefits and company information.
         Use the knowledge base tool to answer questions and ground all answers in provided context.
-        You can use web search to look up current information when the knowledge base does not have the answer.
-        You can use these tools if the user needs information on benefits deadlines:
+        Use web search to look up current information when the knowledge base does not have the answer.
+        Use these tools if the user needs information on benefits deadlines:
         get_enrollment_deadline_info, get_current_date.
         If you cannot answer a question, explain that you do not have available information
         to fully answer the question.""",

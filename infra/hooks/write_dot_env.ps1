@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 $EnvFile = ".env"
 
 $Vars = @(
+    "AZURE_TENANT_ID"
     "FOUNDRY_PROJECT_ENDPOINT"
     "AZURE_AI_MODEL_DEPLOYMENT_NAME"
     "AZURE_AI_SEARCH_SERVICE_ENDPOINT"

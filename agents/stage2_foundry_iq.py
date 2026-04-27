@@ -2,10 +2,6 @@
 Stage 2: Add Foundry IQ — ground answers in an enterprise knowledge base
 served by Azure AI Search via its MCP endpoint.
 
-Slide-friendly version: uses Agent Framework's built-in
-`MCPStreamableHTTPTool` directly, with `header_provider` for bearer-token
-auth. No custom wrapper needed.
-
 What changes from Stage 1:
     - Open an `MCPStreamableHTTPTool` pointing at the KB MCP endpoint.
     - Pass it as one more tool on the Agent.
@@ -23,8 +19,8 @@ import asyncio
 import logging
 import os
 from datetime import date
-from typing import Any
 
+import httpx
 import mcp.types
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework.openai import OpenAIChatClient
@@ -65,6 +61,19 @@ def get_enrollment_deadline_info() -> dict:
     }
 
 
+class BearerTokenAuth(httpx.Auth):
+    """httpx Auth that injects a fresh bearer token into every request."""
+
+    def __init__(self, token_provider) -> None:
+        self._token_provider = token_provider
+
+    async def async_auth_flow(self, request):
+        """Add an Authorization header with a fresh token."""
+        token = await self._token_provider()
+        request.headers["Authorization"] = f"Bearer {token}"
+        yield request
+
+
 async def main():
     credential = DefaultAzureCredential()
 
@@ -85,39 +94,47 @@ async def main():
         f"/mcp?api-version=2025-11-01-Preview"
     )
 
-    async def _get_auth_headers(context: dict[str, Any]) -> dict[str, str]:
-        token = await credential.get_token("https://search.azure.com/.default")
-        return {"Authorization": f"Bearer {token.token}"}
+    search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")
+    search_http_client = httpx.AsyncClient(
+        auth=BearerTokenAuth(search_token_provider),
+        timeout=120.0,
+    )
 
-    async with MCPStreamableHTTPTool(
-        name="knowledge-base",
-        url=mcp_url,
-        header_provider=_get_auth_headers,
-        allowed_tools=["knowledge_base_retrieve"],
-    ) as kb_mcp_tool:
-        agent = Agent(
-            client=client,
-            instructions=(
-                f"You are an internal HR helper for Zava. Today's date is {date.today().isoformat()}. "
-                "Use the knowledge base tool to answer questions about HR policies, benefits, "
-                "and company information, and ground all answers in the retrieved context. "
-                "Use get_enrollment_deadline_info for benefits enrollment timing. "
-                "If you cannot answer from the tools, say so clearly."
-            ),
-            tools=[kb_mcp_tool, get_enrollment_deadline_info],
-        )
+    async with search_http_client:
+        async with MCPStreamableHTTPTool(
+            name="knowledge-base",
+            url=mcp_url,
+            http_client=search_http_client,
+            allowed_tools=["knowledge_base_retrieve"],
+            load_prompts=False,
+        ) as kb_mcp_tool:
+            agent = Agent(
+                client=client,
+                instructions=(
+                    f"You are an internal HR helper for Zava. Today's date is {date.today().isoformat()}. "
+                    "Use the knowledge base tool to answer questions about HR policies, benefits, "
+                    "and company information, and ground all answers in the retrieved context. "
+                    "Use get_enrollment_deadline_info for benefits enrollment timing. "
+                    "If you cannot answer from the tools, say so clearly."
+                ),
+                tools=[kb_mcp_tool, get_enrollment_deadline_info],
+            )
 
-        response = await agent.run(
-            "What PerksPlus benefits are there, and when do I need to enroll by?"
-        )
-        console.print("\n[bold]Agent answer:[/bold]")
-        console.print(Markdown(response.text))
+            response = await agent.run(
+                "What PerksPlus benefits are there, and when do I need to enroll by?"
+            )
+            console.print("\n[bold]Agent answer:[/bold]")
+            console.print(Markdown(response.text))
 
     await credential.close()
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s", handlers=[RichHandler(console=console, show_path=False)])
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[RichHandler(console=console, show_path=False)],
+    )
     logging.getLogger("azure.identity").setLevel(logging.WARNING)
     logging.getLogger("azure.core").setLevel(logging.WARNING)
     asyncio.run(main())

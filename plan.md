@@ -19,7 +19,7 @@ All code samples will be open-source and ready for easy deployment to your own M
 
 After the stream, join office hours in the Microsoft Foundry Discord to ask follow-up questions.
 
-## Demo plan: hosted agent (main.py)
+## Demo plan: hosted agent
 
 Once deployed, test each tool with these queries in the Foundry playground:
 
