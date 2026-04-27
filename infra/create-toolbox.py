@@ -15,7 +15,7 @@ Requires environment variables:
 import os
 
 import httpx
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
@@ -25,7 +25,7 @@ _SCOPE = "https://ai.azure.com/.default"
 _FEATURE_HEADER = "Toolboxes=V1Preview"
 
 
-def _headers(credential: DefaultAzureCredential) -> dict:
+def _headers(credential: AzureDeveloperCliCredential) -> dict:
     token = credential.get_token(_SCOPE).token
     return {
         "Authorization": f"Bearer {token}",
@@ -36,7 +36,7 @@ def _headers(credential: DefaultAzureCredential) -> dict:
 
 def create_or_update_toolbox(endpoint: str, toolbox_name: str, kb_mcp_url: str, kb_mcp_connection_name: str) -> None:
     """Create a new version of the toolbox with web search, code interpreter, and KB MCP tools."""
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
     base_url = f"{endpoint.rstrip('/')}/toolboxes/{toolbox_name}"
 
     tools = [

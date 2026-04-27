@@ -21,7 +21,12 @@ from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
 from agent_framework_openai._exceptions import OpenAIContentFilterException
-from azure.identity import get_bearer_token_provider, ManagedIdentityCredential, AzureDeveloperCliCredential, ChainedTokenCredential
+from azure.identity import (
+    AzureDeveloperCliCredential,
+    ChainedTokenCredential,
+    ManagedIdentityCredential,
+    get_bearer_token_provider,
+)
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
@@ -103,12 +108,12 @@ def main():
     """Main function to run the agent as a web server."""
     user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.getenv("AZURE_CLIENT_ID"))
     azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
-    azure_credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
+    credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
 
     # Foundry Toolbox MCP tool (web_search, code_interpreter, and knowledge_base_retrieve)
     toolbox_endpoint = f"{PROJECT_ENDPOINT.rstrip('/')}/toolboxes/{TOOLBOX_NAME}/mcp?api-version=v1"
     logger.info("Using Foundry Toolbox MCP at %s", toolbox_endpoint)
-    token_provider = get_bearer_token_provider(azure_credential, "https://ai.azure.com/.default")
+    token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
     toolbox_http_client = httpx.AsyncClient(
         auth=ToolboxAuth(token_provider),
         headers={"Foundry-Features": "Toolboxes=V1Preview"},
@@ -128,7 +133,7 @@ def main():
     # which the hosted agent Responses API rejects)
     kb_mcp_url = f"{SEARCH_ENDPOINT.rstrip('/')}/knowledgebases/{KB_NAME}/mcp?api-version=2025-11-01-Preview"
     logger.info("Using KB MCP at %s", kb_mcp_url)
-    search_token_provider = get_bearer_token_provider(azure_credential, "https://search.azure.com/.default")
+    search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")
     kb_http_client = httpx.AsyncClient(
         auth=ToolboxAuth(search_token_provider),
         timeout=120.0,
@@ -144,7 +149,7 @@ def main():
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
         model=MODEL_DEPLOYMENT_NAME,
-        credential=azure_credential,
+        credential=credential,
         middleware=[content_filter_middleware],
     )
 

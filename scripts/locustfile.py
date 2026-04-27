@@ -11,7 +11,7 @@ import random
 import time
 
 from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from dotenv import load_dotenv
 from locust import HttpUser, between, events, task
 
@@ -48,7 +48,8 @@ QUERIES_KB_PLUS_ENROLLMENT = [
 ]
 
 QUERIES_CODE_INTERPRETER = [
-    "If I contribute 6% of a $120,000 salary to my 401k with a 50% employer match, how much total goes in per year? Use Code Interpreter to write Python code to calculate.",
+    "If I contribute 6% of a $120,000 salary to my 401k with a 50% employer match, "
+    "how much total goes in per year? Use Code Interpreter to write Python code to calculate.",
     "Make a pie chart of the Zava vacation tiers: Standard 2 weeks, Senior 4 weeks, Executive 6 weeks.",
 ]
 
@@ -81,7 +82,7 @@ ALL_QUERIES = (
 # Initialize Foundry client once at module load time
 _project_client = AIProjectClient(
     endpoint=PROJECT_ENDPOINT,
-    credential=DefaultAzureCredential(),
+    credential=AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"]),
     allow_preview=True,
 )
 _openai_client = _project_client.get_openai_client(agent_name=AGENT_NAME)

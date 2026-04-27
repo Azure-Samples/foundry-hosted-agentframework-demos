@@ -6,8 +6,9 @@ Only the chat client changes — the Agent + tool code is identical to Stage 0.
 
 Prerequisites:
     - An Azure OpenAI / Foundry model deployment
-    - `az login` (uses DefaultAzureCredential)
+    - `azd auth login` (uses AzureDeveloperCliCredential)
     - .env with:
+        AZURE_TENANT_ID=<your-tenant-id>
         AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com
         AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-5.2
 
@@ -22,7 +23,7 @@ from datetime import date
 
 from agent_framework import Agent, tool
 from agent_framework.openai import OpenAIChatClient
-from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
+from azure.identity.aio import AzureDeveloperCliCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.logging import RichHandler
@@ -45,7 +46,7 @@ def get_enrollment_deadline_info() -> dict:
 
 
 async def main():
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
     token_provider = get_bearer_token_provider(
         credential, "https://cognitiveservices.azure.com/.default"
     )

@@ -10,8 +10,9 @@ for explicit AgentExecutor wrapping).
 
 Prerequisites:
     - An Azure OpenAI / Foundry model deployment
-    - `az login` (uses DefaultAzureCredential)
+    - `azd auth login` (uses AzureDeveloperCliCredential)
     - .env with:
+        AZURE_TENANT_ID=<your-tenant-id>
         AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com
         AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-5.2
 
@@ -24,14 +25,14 @@ import os
 
 from agent_framework import Agent, AgentExecutor, WorkflowBuilder
 from agent_framework.openai import OpenAIChatClient
-from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
+from azure.identity.aio import AzureDeveloperCliCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
 async def main():
     """Run a writer → reviewer workflow against a Foundry-hosted model."""
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
     token_provider = get_bearer_token_provider(
         credential, "https://cognitiveservices.azure.com/.default"
     )

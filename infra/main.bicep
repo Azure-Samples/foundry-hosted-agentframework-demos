@@ -12,6 +12,7 @@ param environmentName string
 param resourceGroupName string = 'rg-${environmentName}'
 
 // Restricted locations to support all features:
+// - Foundry hosted: https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents#region-availability
 // - Responses API: https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/responses?tabs=python-key#region-availability
 // - Evaluations + red teaming: https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network
 @minLength(1)

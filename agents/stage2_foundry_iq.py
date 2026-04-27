@@ -24,7 +24,7 @@ import httpx
 import mcp.types
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework.openai import OpenAIChatClient
-from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
+from azure.identity.aio import AzureDeveloperCliCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.logging import RichHandler
@@ -75,7 +75,7 @@ class BearerTokenAuth(httpx.Auth):
 
 
 async def main():
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
 
     # --- Chat client (Foundry / Azure OpenAI) -----------------------------
     aoai_token_provider = get_bearer_token_provider(

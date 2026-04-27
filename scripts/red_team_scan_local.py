@@ -22,7 +22,7 @@ import urllib.error
 import urllib.request
 
 from azure.ai.evaluation.red_team import AttackStrategy, RedTeam, RiskCategory
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -126,7 +126,7 @@ def invoke_local_agent(query: str) -> str:
 
 async def run_local_red_team() -> None:
     """Run the local preview red-team scan and save the result file."""
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
 
     red_team = RedTeam(
         azure_ai_project=PROJECT_ENDPOINT,

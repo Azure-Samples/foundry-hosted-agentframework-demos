@@ -20,7 +20,7 @@ from azure.ai.projects.models import (
     RecurrenceTrigger,
     Schedule,
 )
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -33,7 +33,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
-credential = DefaultAzureCredential()
+credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
 project_client = AIProjectClient(endpoint=project_endpoint, credential=credential)
 openai_client = project_client.get_openai_client()
 

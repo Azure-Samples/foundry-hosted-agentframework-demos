@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from azure.identity.aio import DefaultAzureCredential
+from azure.identity.aio import AzureDeveloperCliCredential
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -155,7 +155,7 @@ async def main_async() -> int:
         print(f"Index schema not found: {index_schema_path}")
         return 1
 
-    credential = DefaultAzureCredential()
+    credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
 
     # Check if knowledge base already exists — skip if so
     async with SearchIndexClient(endpoint=endpoint, credential=credential) as index_client:

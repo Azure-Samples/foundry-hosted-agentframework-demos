@@ -14,7 +14,7 @@ from agent_framework import Agent, AgentExecutor, WorkflowBuilder
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential, ChainedTokenCredential, ManagedIdentityCredential
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
@@ -24,7 +24,9 @@ MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
 
 def main():
-    credential = DefaultAzureCredential()
+    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.getenv("AZURE_CLIENT_ID"))
+    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
+    credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
 
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
