@@ -21,7 +21,7 @@ from azure.ai.projects.models import (
     Schedule,
     TestingCriterionAzureAIEvaluator,
 )
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -38,7 +38,7 @@ def main() -> None:
     evaluation_name = f"Continuous Evaluation - {AGENT_NAME} - {date.today().isoformat()}"
 
     with (
-        AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"]) as credential,
+        DefaultAzureCredential() as credential,
         AIProjectClient(endpoint=project_endpoint, credential=credential) as project_client,
         project_client.get_openai_client() as openai_client,
     ):
@@ -79,7 +79,7 @@ def main() -> None:
                 eval_run={
                     "data_source": {
                         "type": "azure_ai_traces",
-                        "agent_id": AGENT_NAME,
+                        "agent_name": AGENT_NAME,
                         "max_traces": MAX_TRACES,
                     }
                 },

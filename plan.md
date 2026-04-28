@@ -36,3 +36,5 @@ Once deployed, test each tool with these queries in the Foundry playground:
 | 10 | Code interpreter | If I contribute 6% of a $120,000 salary to my 401k with a 50% employer match, how much total goes in per year? Use Code Interpreter to write Python code to calculate. | 🟡 | doesnt show up in traces linked from Chat playground. |
 | 11 | Code interpreter | Make a pie chart of the Zava vacation tiers: Standard 2 weeks, Senior 4 weeks, Executive 6 weeks | 🟡 | BUG: Can't download the pie chart. Reported in Bug Bash. Also, doesnt show up in traces linked from Chat playground. |
 | 12 | (none — decline) | What are the best exercises to reduce lower back pain? | 🟡 | It did not decline, still searched, and then triggered RAI filter |
+
+TODO: Report a docs issue for the Foundry agent evaluators page. The published `tool_definitions` example uses nested OpenAI-style `{"type": "function", "function": {...}}`, but the live evaluator run rejected that shape and required top-level `name`, `type`, `description`, and `parameters` fields instead.

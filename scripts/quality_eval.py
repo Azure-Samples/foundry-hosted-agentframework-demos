@@ -24,6 +24,71 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "eval_output")
 DATASET_PATH = os.path.join(os.path.dirname(__file__), "eval_data", "quality_ground_truth.jsonl")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+TOOL_DEFINITIONS = [
+    {
+        "name": "get_enrollment_deadline_info",
+        "type": "function",
+        "description": "Return enrollment timeline details for health insurance plans.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "title": "get_enrollment_deadline_info_input",
+        },
+    },
+    {
+        "name": "get_current_date",
+        "type": "function",
+        "description": "Return the current date in ISO format.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "title": "get_current_date_input",
+        },
+    },
+    {
+        "name": "web_search",
+        "type": "function",
+        "description": (
+            "Tool for performing a web search to add context to your responses when user query "
+            "needs any factual information, statistics, claims or fresh information that is not in "
+            "your training data. Use this tool to retrieve relevant web search results based on a "
+            "user's query."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "search_query": {
+                    "type": "string",
+                    "description": "The search query to send to the web search tool.",
+                }
+            },
+            "required": ["search_query"],
+        },
+    },
+    {
+        "name": "knowledge_base_retrieve",
+        "type": "function",
+        "description": (
+            "Use knowledge_base_retrieve to search for information or documents that must be "
+            "authoritative and attributable to a source. This knowledge base is always relevant to "
+            "the user and any organizations they're affiliated with. You may call this tool with "
+            "ambiguous queries to retrieve relevant context before asking the user for further "
+            "clarification."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "queries": {
+                    "type": "array",
+                    "description": "A list of concise, distinct retrieval queries.",
+                    "items": {"type": "string"},
+                }
+            },
+            "required": ["queries"],
+        },
+    },
+]
+
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
@@ -40,10 +105,17 @@ print(f"Agent: {agent_version.name}  version: {agent_version.version}")
 # ---------------------------------------------------------------------------
 # 2. Upload a ground truth test dataset (JSONL)
 # ---------------------------------------------------------------------------
+augmented_dataset_path = os.path.join(OUTPUT_DIR, f"quality_ground_truth_with_tools_{AGENT_NAME}.jsonl")
+with open(DATASET_PATH) as input_file, open(augmented_dataset_path, "w") as output_file:
+    for line in input_file:
+        item = json.loads(line)
+        item["tool_definitions"] = TOOL_DEFINITIONS
+        output_file.write(json.dumps(item) + "\n")
+
 dataset = project_client.datasets.upload_file(
     name=f"{AGENT_NAME}-eval-ground-truth",
     version=str(int(time.time())),
-    file_path=DATASET_PATH,
+    file_path=augmented_dataset_path,
 )
 print(f"Uploaded dataset: {dataset.id}")
 
@@ -53,10 +125,63 @@ print(f"Uploaded dataset: {dataset.id}")
 testing_criteria = [
     {
         "type": "azure_ai_evaluator",
+        "name": "Task Completion",
+        "evaluator_name": "builtin.task_completion",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
         "name": "Tool Call Accuracy",
         "evaluator_name": "builtin.tool_call_accuracy",
         "data_mapping": {
             "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+            "tool_definitions": "{{item.tool_definitions}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
+        "name": "Tool Selection",
+        "evaluator_name": "builtin.tool_selection",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+            "tool_definitions": "{{item.tool_definitions}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
+        "name": "Tool Input Accuracy",
+        "evaluator_name": "builtin.tool_input_accuracy",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+            "tool_definitions": "{{item.tool_definitions}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
+        "name": "Tool Output Utilization",
+        "evaluator_name": "builtin.tool_output_utilization",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+            "tool_definitions": "{{item.tool_definitions}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
+        "name": "Tool Call Success",
+        "evaluator_name": "builtin.tool_call_success",
+        "data_mapping": {
             "response": "{{sample.output_items}}",
         },
         "initialization_parameters": {"deployment_name": model_deployment},
@@ -83,6 +208,16 @@ testing_criteria = [
     },
     {
         "type": "azure_ai_evaluator",
+        "name": "Relevance",
+        "evaluator_name": "builtin.relevance",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+    {
+        "type": "azure_ai_evaluator",
         "name": "Response Completeness",
         "evaluator_name": "builtin.response_completeness",
         "data_mapping": {
@@ -91,7 +226,8 @@ testing_criteria = [
         },
         "initialization_parameters": {"deployment_name": model_deployment},
     },
-    # RAG specific:
+    # Task Navigation Efficiency is excluded here because it requires per-item
+    # expected action sequences in the input dataset.
     {
         "type": "azure_ai_evaluator",
         "name": "Groundedness",
@@ -101,7 +237,7 @@ testing_criteria = [
             "response": "{{sample.output_items}}",
         },
         "initialization_parameters": {"deployment_name": model_deployment},
-    }
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -116,8 +252,9 @@ data_source_config = {
         "properties": {
             "query": {"type": "string"},
             "ground_truth": {"type": "string"},
+            "tool_definitions": {"type": "array"},
         },
-        "required": ["query", "ground_truth"],
+        "required": ["query", "ground_truth", "tool_definitions"],
     },
     "include_sample_schema": True,
 }
