@@ -88,14 +88,12 @@ if you're configuring observability yourself.
 
 ## Dependency management
 
-`pyproject.toml` and `uv.lock` exist in the repo root, `agents/`, and `workflows/`. Each
-service has its own Docker build context, so all copies are needed. When you add or
+`pyproject.toml` and `uv.lock` exist in both the repo root and `workflows/`. Each
+service has its own Docker build context, so both copies are needed. When you add or
 update dependencies, copy the files to keep them in sync:
 
 ```bash
-cp pyproject.toml agents/pyproject.toml
 cp pyproject.toml workflows/pyproject.toml
-cp uv.lock agents/uv.lock
 cp uv.lock workflows/uv.lock
 ```
 
@@ -115,28 +113,6 @@ This is where to search and file bugs for the technologies used in this reposito
 * Agent framework: github.com/microsoft/agent-framework
 * azd: github.com/Azure/azure-dev
 * Agentserver wrapper SDK (part of Azure Python SDK): github.com/azure/azure-sdk-for-python
-
-## Troubleshooting
-
-If a continuous evaluation run fails with "No trace data found", verify that the
-time window contains trace spans with nonempty `gen_ai.input.messages` and
-`gen_ai.output.messages`. Continuous evaluation needs those fields to build the
-evaluation dataset; request rows without message-bearing spans are not enough.
-
-```kusto
-dependencies
-| where timestamp > ago(1h)
-| extend dims = parse_json(tostring(customDimensions))
-| extend agentId = tostring(dims["gen_ai.agent.id"]),
-                 inputMessages = tostring(dims["gen_ai.input.messages"]),
-                 outputMessages = tostring(dims["gen_ai.output.messages"])
-| summarize
-        totalRows = count(),
-        rowsWithBothMessages = countif(inputMessages !in ("", "[]") and outputMessages !in ("", "[]")),
-        latest = max(timestamp)
-    by agentId
-| order by rowsWithBothMessages desc
-```
 
 ## Relevant documentation
 

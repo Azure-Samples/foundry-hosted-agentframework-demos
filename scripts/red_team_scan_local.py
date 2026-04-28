@@ -13,6 +13,7 @@ Usage:
        uv run scripts/red_team_scan_local.py
 """
 
+import argparse
 import asyncio
 import datetime
 import json
@@ -58,7 +59,7 @@ def render_results_summary(results_file: pathlib.Path) -> None:
                 f"[bold red]Failed:[/bold red] {result_counts.get('failed', 0)}   "
                 f"[bold yellow]Errored:[/bold yellow] {result_counts.get('errored', 0)}"
             ),
-            title="Local Red-Team Summary",
+            title="Red-Team scan summary",
         )
     )
 
@@ -171,5 +172,37 @@ async def run_local_red_team() -> None:
         console.print(f"[yellow]Expected results file not found:[/yellow] {results_file}")
 
 
+def show_latest_results(results_dir: pathlib.Path | None = None) -> None:
+    """Find and display results from the latest (or specified) red-team scan directory."""
+    if results_dir is None:
+        candidates = sorted(OUTPUT_DIR.glob("local_redteam_output_*/"))
+        if not candidates:
+            console.print("[red]No local red-team output directories found in[/red]", str(OUTPUT_DIR))
+            return
+        results_dir = candidates[-1]
+    results_file = results_dir / "results.json"
+    if not results_file.exists():
+        console.print(f"[red]No results.json found in[/red] {results_dir}")
+        return
+    console.print(f"Showing results from [bold]{results_dir}[/bold]")
+    render_results_summary(results_file)
+
+
 if __name__ == "__main__":
-    asyncio.run(run_local_red_team())
+    parser = argparse.ArgumentParser(description="Local red-team scan for the HR agent.")
+    parser.add_argument(
+        "--show-results",
+        nargs="?",
+        const="latest",
+        metavar="RESULTS_DIR",
+        help="Show results from a previous scan. Omit value to use the latest scan.",
+    )
+    args = parser.parse_args()
+
+    if args.show_results is not None:
+        if args.show_results == "latest":
+            show_latest_results()
+        else:
+            show_latest_results(pathlib.Path(args.show_results))
+    else:
+        asyncio.run(run_local_red_team())
