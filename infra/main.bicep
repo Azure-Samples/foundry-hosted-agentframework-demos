@@ -120,7 +120,6 @@ module aiProject 'core/ai/ai-project.bicep' = {
     deployments: aiProjectDeployments
     additionalDependentResources: dependentResources
     enableMonitoring: enableMonitoring
-    enableHostedAgents: enableHostedAgents
     enableSearch: enableSearch
     existingContainerRegistryResourceId: existingContainerRegistryResourceId
     existingContainerRegistryEndpoint: existingContainerRegistryEndpoint

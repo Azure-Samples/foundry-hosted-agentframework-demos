@@ -21,7 +21,7 @@ from azure.ai.projects.models import (
     Schedule,
     TestingCriterionAzureAIEvaluator,
 )
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -38,7 +38,7 @@ def main() -> None:
     evaluation_name = f"Continuous Evaluation - {AGENT_NAME} - {date.today().isoformat()}"
 
     with (
-        DefaultAzureCredential() as credential,
+        AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"]) as credential,
         AIProjectClient(endpoint=project_endpoint, credential=credential) as project_client,
         project_client.get_openai_client() as openai_client,
     ):
@@ -86,18 +86,7 @@ def main() -> None:
                     initialization_parameters={
                         "deployment_name": model_deployment,
                     },
-                ),
-                TestingCriterionAzureAIEvaluator(
-                    type="azure_ai_evaluator",
-                    name="Coherence",
-                    evaluator_name="builtin.coherence",
-                    data_mapping={
-                        "response": "{{item.response}}",
-                    },
-                    initialization_parameters={
-                        "deployment_name": model_deployment,
-                    },
-                ),
+                )
             ],
         )
         print(f"Created evaluation: {evaluation.id}")

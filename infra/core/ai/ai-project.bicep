@@ -31,9 +31,6 @@ param additionalDependentResources dependentResourcesType
 @description('Enable monitoring via appinsights and log analytics')
 param enableMonitoring bool = true
 
-@description('Enable hosted agent deployment')
-param enableHostedAgents bool = false
-
 @description('Enable Azure AI Search provisioning and project connection')
 param enableSearch bool = true
 
@@ -150,16 +147,6 @@ resource aiAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
     dependsOn: [
       seqDeployments
     ]
-  }
-
-  resource aiFoundryAccountCapabilityHost 'capabilityHosts@2025-10-01-preview' = if (enableHostedAgents) {
-    name: 'agents'
-    properties: {
-      capabilityHostKind: 'Agents'
-      // IMPORTANT: this is required to enable hosted agents deployment
-      // if no BYO Net is provided
-      enablePublicHostingEnvironment: true
-    }
   }
 }
 
