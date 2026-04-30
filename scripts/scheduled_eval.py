@@ -1,6 +1,4 @@
-"""Set up a daily scheduled evaluation for the agent.
-
-Creates an evaluation + eval run definition, then schedules it to run daily at 9 AM UTC.
+"""Set up a scheduled evaluation for the agent.
 
 Based on:
 https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/ai/azure-ai-projects/samples/evaluations/sample_scheduled_evaluations.py
@@ -12,11 +10,12 @@ Usage:
 import json
 import os
 import time
+from pathlib import Path
 
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import (
-    DailyRecurrenceSchedule,
     EvaluationScheduleTask,
+    HourlyRecurrenceSchedule,
     RecurrenceTrigger,
     Schedule,
 )
@@ -26,9 +25,9 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 AGENT_NAME = os.environ.get("AGENT_NAME", "hosted-agentframework-agent")
-SCHEDULE_ID = f"{AGENT_NAME}-daily-quality-eval"
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "eval_output")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+SCHEDULE_ID = f"{AGENT_NAME}-scheduled-quality-eval"
+OUTPUT_DIR = Path(__file__).parent / "eval_output"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
@@ -60,7 +59,7 @@ test_queries = [
     {"query": "Write me a Python script to sort a list."},
 ]
 
-dataset_path = os.path.join(OUTPUT_DIR, "test_queries.jsonl")
+dataset_path = OUTPUT_DIR / "test_queries.jsonl"
 with open(dataset_path, "w") as f:
     for item in test_queries:
         f.write(json.dumps(item) + "\n")
@@ -68,7 +67,7 @@ with open(dataset_path, "w") as f:
 dataset = project_client.datasets.upload_file(
     name=f"{AGENT_NAME}-scheduled-eval-queries",
     version=str(int(time.time())),
-    file_path=dataset_path,
+    file_path=str(dataset_path),
 )
 print(f"Uploaded dataset: {dataset.id}")
 
@@ -90,16 +89,6 @@ testing_criteria = [
         "type": "azure_ai_evaluator",
         "name": "Intent Resolution",
         "evaluator_name": "builtin.intent_resolution",
-        "data_mapping": {
-            "query": "{{item.query}}",
-            "response": "{{sample.output_items}}",
-        },
-        "initialization_parameters": {"deployment_name": model_deployment},
-    },
-    {
-        "type": "azure_ai_evaluator",
-        "name": "Groundedness",
-        "evaluator_name": "builtin.groundedness",
         "data_mapping": {
             "query": "{{item.query}}",
             "response": "{{sample.output_items}}",
@@ -168,14 +157,20 @@ eval_run_definition = {
 }
 
 # ---------------------------------------------------------------------------
-# 5. Create the daily schedule (9 AM UTC)
+# 5. Delete any existing schedule with the same ID, then create a new one
 # ---------------------------------------------------------------------------
+try:
+    project_client.beta.schedules.delete(schedule_id=SCHEDULE_ID)
+    print(f"Deleted existing schedule: {SCHEDULE_ID}")
+except Exception:
+    pass  # No existing schedule to delete
+
 schedule = Schedule(
-    display_name=f"Daily Quality Eval - {AGENT_NAME}",
+    display_name=f"Hourly Quality Eval - {AGENT_NAME}",
     enabled=True,
     trigger=RecurrenceTrigger(
         interval=1,
-        schedule=DailyRecurrenceSchedule(hours=[9]),
+        schedule=HourlyRecurrenceSchedule(),
     ),
     task=EvaluationScheduleTask(
         eval_id=evaluation.id,
@@ -188,6 +183,6 @@ schedule_response = project_client.beta.schedules.create_or_update(
     schedule=schedule,
 )
 print(f"Schedule created: {schedule_response.schedule_id}")
-print("  Trigger: daily at 9 AM UTC")
+print("  Trigger: hourly")
 print(f"  Evaluation: {evaluation.id}")
 print(f"  Agent: {AGENT_NAME} v{agent_version.version}")

@@ -87,11 +87,12 @@ Scripts for quality evaluation, red teaming, and scheduled runs are in `scripts/
 | Script | Description |
 |--------|-------------|
 | `scripts/quality_eval.py` | Run quality evaluation (task adherence, groundedness, relevance) |
-| `scripts/continuous_eval.py` | Set up hourly continuous evaluation from recent agent traces |
-| `scripts/red_team_scan.py` | Attempt the hosted red-team flow; currently non-actionable for this sample |
-| `scripts/red_team_scan_local.py` | Run local-preview red teaming against `azd ai agent run` |
 | `scripts/scheduled_eval.py` | Set up daily quality evaluation schedule |
 | `scripts/scheduled_red_team.py` | Placeholder for scheduled hosted red teaming once supported |
+| `scripts/continuous_eval.py` | Set up hourly continuous evaluation from recent agent traces |
+| `scripts/continuous_eval_alert.py` | Create an Azure Monitor alert for low evaluation pass rates |
+| `scripts/red_team_scan.py` | Attempt the hosted red-team flow; currently non-actionable for this sample |
+| `scripts/red_team_scan_local.py` | Run local-preview red teaming against `azd ai agent run` |
 
 ```bash
 uv run scripts/quality_eval.py

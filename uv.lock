@@ -951,6 +951,7 @@ dependencies = [
     { name = "locust" },
     { name = "mcp" },
     { name = "python-dotenv" },
+    { name = "requests" },
     { name = "rich" },
 ]
 
@@ -969,6 +970,7 @@ requires-dist = [
     { name = "locust", specifier = ">=2.31.0" },
     { name = "mcp", specifier = ">=1.27.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "rich", specifier = ">=13.0.0" },
 ]
 

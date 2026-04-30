@@ -18,6 +18,7 @@ dependencies = [
     "rich>=13.0.0",
     "azure-ai-evaluation[redteam]>=1.16.5",
     "locust>=2.31.0",
+    "requests>=2.31.0",
 ]
 
 [tool.uv]

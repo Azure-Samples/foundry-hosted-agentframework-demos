@@ -53,8 +53,8 @@ def main() -> None:
             testing_criteria=[
                 TestingCriterionAzureAIEvaluator(
                     type="azure_ai_evaluator",
-                    name="Task Completion",
-                    evaluator_name="builtin.task_completion",
+                    name="Task Adherence",
+                    evaluator_name="builtin.task_adherence",
                     data_mapping={
                         "query": "{{item.query}}",
                         "response": "{{item.response}}",
@@ -62,7 +62,42 @@ def main() -> None:
                     initialization_parameters={
                         "deployment_name": model_deployment,
                     },
-                )
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Intent Resolution",
+                    evaluator_name="builtin.intent_resolution",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                    initialization_parameters={
+                        "deployment_name": model_deployment,
+                    },
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Relevance",
+                    evaluator_name="builtin.relevance",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                    initialization_parameters={
+                        "deployment_name": model_deployment,
+                    },
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Coherence",
+                    evaluator_name="builtin.coherence",
+                    data_mapping={
+                        "response": "{{item.response}}",
+                    },
+                    initialization_parameters={
+                        "deployment_name": model_deployment,
+                    },
+                ),
             ],
         )
         print(f"Created evaluation: {evaluation.id}")

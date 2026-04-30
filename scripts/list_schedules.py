@@ -39,12 +39,22 @@ def print_registered_schedules(project_client: AIProjectClient, heading: str = "
         marker = "★ " if schedule.schedule_id == mark_schedule_id else "  "
         status = str(schedule.provisioning_status).split(".")[-1]
         enabled = "✓" if schedule.enabled else "✗"
+
+        # Extract agent version from eval_run target if available
+        eval_run = getattr(task, "eval_run", None) if task else None
+        agent_version = "-"
+        if isinstance(eval_run, dict):
+            data_source = eval_run.get("data_source", {})
+            target = data_source.get("target", {})
+            if target.get("type") == "azure_ai_agent":
+                agent_version = f"{target.get('name', '?')} v{target.get('version', '?')}"
         
         info = (
             f"[cyan]{marker}{schedule.schedule_id}[/cyan]\n"
             f"  Status: {status} | Enabled: {enabled}\n"
             f"  Name: {schedule.display_name}\n"
-            f"  Evaluation: {eval_id}"
+            f"  Evaluation: {eval_id}\n"
+            f"  Target: {agent_version}"
         )
         console.print(Panel(info, expand=False, border_style="dim cyan"))
 
