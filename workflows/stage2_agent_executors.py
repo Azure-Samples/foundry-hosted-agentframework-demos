@@ -71,7 +71,7 @@ async def main():
     writer_executor = AgentExecutor(writer, context_mode="last_agent")
     formatter_executor = AgentExecutor(formatter, context_mode="last_agent")
     workflow = (
-        WorkflowBuilder(start_executor=writer_executor, output_executors=[formatter_executor])
+        WorkflowBuilder(start_executor=writer_executor, output_from=[formatter_executor])
         .add_edge(writer_executor, formatter_executor)
         .build()
     )

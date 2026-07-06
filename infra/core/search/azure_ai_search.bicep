@@ -238,7 +238,7 @@ resource kbMcpConnection 'Microsoft.CognitiveServices/accounts/projects/connecti
     #disable-next-line BCP036
     authType: 'ProjectManagedIdentity'
     category: 'RemoteTool'
-    target: 'https://${searchService.name}.search.windows.net/knowledgebases/${knowledgeBaseName}/mcp?api-version=2025-11-01-preview'
+    target: 'https://${searchService.name}.search.windows.net/knowledgebases/${knowledgeBaseName}/mcp?api-version=2026-05-01-preview'
     isSharedToAll: true
     audience: 'https://search.azure.com/'
     metadata: {

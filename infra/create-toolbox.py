@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     kb_mcp_url = (
         f"{search_endpoint.rstrip('/')}/knowledgebases/{kb_name}"
-        f"/mcp?api-version=2025-11-01-preview"
+        f"/mcp?api-version=2026-05-01-preview"
     )
 
     create_or_update_toolbox(endpoint, toolbox_name, kb_mcp_url, kb_mcp_connection_name)

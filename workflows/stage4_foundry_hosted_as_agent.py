@@ -24,9 +24,9 @@ MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 
 
 def main():
-    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.getenv("AZURE_CLIENT_ID"))
+    managed_identity_credential = ManagedIdentityCredential()
     azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
-    credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
+    credential = ChainedTokenCredential(managed_identity_credential, azure_dev_cli_credential)
 
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
@@ -61,7 +61,7 @@ def main():
     workflow_agent = (
         WorkflowBuilder(
             start_executor=writer_executor,
-            output_executors=[format_executor],
+            output_from=[format_executor],
         )
         .add_edge(writer_executor, format_executor)
         .build()

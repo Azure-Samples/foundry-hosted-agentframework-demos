@@ -44,7 +44,7 @@ async def main():
     """Build and run the UpperCase → ReverseText workflow."""
     upper = UpperCase()
     reverse = ReverseText()
-    workflow = WorkflowBuilder(start_executor=upper).add_edge(upper, reverse).build()
+    workflow = WorkflowBuilder(start_executor=upper, output_from=[reverse]).add_edge(upper, reverse).build()
     events = await workflow.run("hello world")
 
     print("Input:  hello world")

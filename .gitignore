@@ -20,6 +20,9 @@
 # Generated red-team scan outputs
 scripts/red_team_output/
 scripts/eval_output/*.json
+scripts/test_output_agent/
+scripts/test_output_workflow/
+scripts/test_output_kb/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

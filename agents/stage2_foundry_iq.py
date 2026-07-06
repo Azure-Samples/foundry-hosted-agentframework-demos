@@ -91,7 +91,7 @@ async def main():
     mcp_url = (
         f"{os.environ['AZURE_AI_SEARCH_SERVICE_ENDPOINT']}"
         f"/knowledgebases/{os.environ['AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME']}"
-        f"/mcp?api-version=2025-11-01-Preview"
+        f"/mcp?api-version=2026-05-01-preview"
     )
 
     search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")

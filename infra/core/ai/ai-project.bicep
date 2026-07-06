@@ -218,6 +218,20 @@ resource projectLogAnalyticsReaderRoleAssignment 'Microsoft.Authorization/roleAs
   }
 }
 
+// Cognitive Services OpenAI User for the Foundry Project managed identity.
+// Required for scheduled/batch evaluations, which run under the project identity
+// and call the model deployment's chat/completions action.
+resource projectOpenAIUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: aiAccount
+  name: guid(subscription().id, resourceGroup().id, aiAccount::project.name, 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  properties: {
+    principalId: aiAccount::project.identity.principalId
+    principalType: 'ServicePrincipal'
+    // Cognitive Services OpenAI User
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  }
+}
+
 // Azure AI User for the developer, scoped to the Foundry Project.
 // Project scope is sufficient for creating/running agents and calling models via the project endpoint.
 resource localUserAzureAIUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
