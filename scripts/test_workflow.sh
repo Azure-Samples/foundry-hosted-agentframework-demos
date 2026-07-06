@@ -26,6 +26,7 @@ OUTPUT_BASE="${TEST_OUTPUT_DIR:-$SCRIPT_DIR/test_output_workflow}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_DIR="$OUTPUT_BASE/$TIMESTAMP"
 SUMMARY_FILE="$RUN_DIR/summary.txt"
+WARN_PATTERN='(^|[^[:alnum:]])429([^[:alnum:]]|$)|rate[ -]?limit( exceeded)?|too many requests|throttl(ed|ing)|service failed|Traceback|Exception'
 
 print_usage() {
   cat <<EOF
@@ -118,7 +119,7 @@ for i in "${!TEST_NAMES[@]}"; do
   status="PASS"
   if [[ $exit_code -ne 0 ]]; then
     status="FAIL"
-  elif grep -Eiq "429|rate[ -]?limit( exceeded)?|too many requests|throttl(ed|ing)|service failed|Traceback|Exception" "$out_file" "$err_file"; then
+  elif grep -Eiq "$WARN_PATTERN" "$out_file" "$err_file"; then
     status="WARN"
   fi
 

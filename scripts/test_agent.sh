@@ -26,6 +26,7 @@ OUTPUT_BASE="${TEST_OUTPUT_DIR:-$SCRIPT_DIR/test_output_agent}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_DIR="$OUTPUT_BASE/$TIMESTAMP"
 SUMMARY_FILE="$RUN_DIR/summary.txt"
+WARN_PATTERN='(^|[^[:alnum:]])429([^[:alnum:]]|$)|rate limit|throttl|service failed'
 
 print_usage() {
   cat <<EOF
@@ -125,7 +126,7 @@ for i in "${!TEST_NAMES[@]}"; do
   status="PASS"
   if [[ $exit_code -ne 0 ]]; then
     status="FAIL"
-  elif grep -Eiq "rate limit|429|throttl|service failed" "$out_file" "$err_file"; then
+  elif grep -Eiq "$WARN_PATTERN" "$out_file" "$err_file"; then
     status="WARN"
   fi
 
