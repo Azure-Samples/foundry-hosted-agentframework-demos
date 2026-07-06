@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test the KB MCP endpoint directly with curl.
-# Exports the tools/call response to kb_mcp_response.json.
+# Exports the tools/call response to a timestamped run directory.
 #
 # Usage:
 #   ./scripts/test_kb_mcp.sh
@@ -14,7 +14,12 @@ source "$SCRIPT_DIR/../.env"
 QUERY="${1:-perksplus benefits}"
 MCP_URL="${AZURE_AI_SEARCH_SERVICE_ENDPOINT}/knowledgebases/${AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME:-zava-company-kb}/mcp?api-version=2026-05-01-preview"
 TOKEN=$(az account get-access-token --resource https://search.azure.com --query accessToken -o tsv)
-OUTPUT_FILE="$SCRIPT_DIR/kb_mcp_response.json"
+OUTPUT_BASE="$SCRIPT_DIR/test_output_kb"
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+RUN_DIR="$OUTPUT_BASE/$TIMESTAMP"
+OUTPUT_FILE="$RUN_DIR/kb_mcp_response.json"
+
+mkdir -p "$RUN_DIR"
 
 AUTH="Authorization: Bearer $TOKEN"
 CT="Content-Type: application/json"
@@ -22,6 +27,7 @@ ACCEPT="Accept: application/json, text/event-stream"
 
 echo "MCP URL: $MCP_URL"
 echo "Query: $QUERY"
+echo "Run directory: $RUN_DIR"
 echo ""
 
 # Step 1: Initialize
