@@ -26,7 +26,7 @@ OUTPUT_BASE="${TEST_OUTPUT_DIR:-$SCRIPT_DIR/test_output_workflow}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_DIR="$OUTPUT_BASE/$TIMESTAMP"
 SUMMARY_FILE="$RUN_DIR/summary.txt"
-WARN_PATTERN='(^|[^[:alnum:]])429([^[:alnum:]]|$)|rate[ -]?limit( exceeded)?|too many requests|throttl(ed|ing)|service failed|Traceback|Exception:|^\s*File "'
+WARN_PATTERN='(^|[^[:alnum:]])429([^[:alnum:]]|$)|rate[ -]?limit( exceeded)?|too many requests|throttl(ed|ing)|service failed|Traceback|Exception:|^[[:space:]]*File "'
 
 print_usage() {
   cat <<EOF
