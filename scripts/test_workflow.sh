@@ -119,33 +119,31 @@ add_test "Workflow concise response" "Write a very concise short article about h
 build_cmd() {
   local prompt="$1"
   local new_session="$2"
-  local cmd=("azd")
+  CMD=("azd")
 
   if [[ -n "${AZD_ENV:-}" ]]; then
-    cmd+=("-e" "$AZD_ENV")
+    CMD+=("-e" "$AZD_ENV")
   fi
 
-  cmd+=("ai" "agent" "invoke")
+  CMD+=("ai" "agent" "invoke")
 
   if [[ $LOCAL_MODE -eq 1 ]]; then
-    cmd+=("--local")
-    cmd+=("$prompt")
+    CMD+=("--local")
+    CMD+=("$prompt")
   else
-    cmd+=("$AGENT_NAME")
-    cmd+=("$prompt")
+    CMD+=("$AGENT_NAME")
+    CMD+=("$prompt")
   fi
 
   if [[ "$new_session" == "1" ]]; then
-    cmd+=("--new-session")
+    CMD+=("--new-session")
   fi
 
   if [[ -n "$AGENT_VERSION" ]]; then
-    cmd+=("--version" "$AGENT_VERSION")
+    CMD+=("--version" "$AGENT_VERSION")
   fi
 
-  cmd+=("--timeout" "$TIMEOUT_SECS")
-
-  printf '%q ' "${cmd[@]}"
+  CMD+=("--timeout" "$TIMEOUT_SECS")
 }
 
 pass_count=0
@@ -164,10 +162,8 @@ for i in "${!TEST_NAMES[@]}"; do
   echo "Prompt: $prompt" > "$RUN_DIR/test_${idx}.prompt.txt"
   echo "New session: $new_session" >> "$RUN_DIR/test_${idx}.prompt.txt"
 
-  cmd_string="$(build_cmd "$prompt" "$new_session")"
-
-  # shellcheck disable=SC2086
-  eval "$cmd_string" >"$out_file" 2>"$err_file"
+  build_cmd "$prompt" "$new_session"
+  "${CMD[@]}" >"$out_file" 2>"$err_file"
   exit_code=$?
 
   status="PASS"

@@ -123,29 +123,27 @@ add_test "Uncertain response behavior" "What is Zava's fertility benefit lifetim
 
 build_cmd() {
   local prompt="$1"
-  local cmd=("azd")
+  CMD=("azd")
 
   if [[ -n "${AZD_ENV:-}" ]]; then
-    cmd+=("-e" "$AZD_ENV")
+    CMD+=("-e" "$AZD_ENV")
   fi
 
-  cmd+=("ai" "agent" "invoke")
+  CMD+=("ai" "agent" "invoke")
 
   if [[ $LOCAL_MODE -eq 1 ]]; then
-    cmd+=("--local")
-    cmd+=("$prompt")
+    CMD+=("--local")
+    CMD+=("$prompt")
   else
-    cmd+=("$AGENT_NAME")
-    cmd+=("$prompt")
+    CMD+=("$AGENT_NAME")
+    CMD+=("$prompt")
   fi
 
   if [[ -n "$AGENT_VERSION" ]]; then
-    cmd+=("--version" "$AGENT_VERSION")
+    CMD+=("--version" "$AGENT_VERSION")
   fi
 
-  cmd+=("--timeout" "$TIMEOUT_SECS")
-
-  printf '%q ' "${cmd[@]}"
+  CMD+=("--timeout" "$TIMEOUT_SECS")
 }
 
 pass_count=0
@@ -162,10 +160,8 @@ for i in "${!TEST_NAMES[@]}"; do
   echo "[$idx/${#TEST_NAMES[@]}] $name" | tee -a "$SUMMARY_FILE"
   echo "Prompt: $prompt" > "$RUN_DIR/test_${idx}.prompt.txt"
 
-  cmd_string="$(build_cmd "$prompt")"
-
-  # shellcheck disable=SC2086
-  eval "$cmd_string" >"$out_file" 2>"$err_file"
+  build_cmd "$prompt"
+  "${CMD[@]}" >"$out_file" 2>"$err_file"
   exit_code=$?
 
   status="PASS"
