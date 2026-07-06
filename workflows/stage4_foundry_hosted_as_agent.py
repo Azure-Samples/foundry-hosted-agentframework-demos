@@ -61,7 +61,7 @@ def main():
     workflow_agent = (
         WorkflowBuilder(
             start_executor=writer_executor,
-            output_executors=[format_executor],
+            output_from=[format_executor],
         )
         .add_edge(writer_executor, format_executor)
         .build()
