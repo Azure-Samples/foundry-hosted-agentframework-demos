@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../.env"
 
 QUERY="${1:-perksplus benefits}"
-MCP_URL="${AZURE_AI_SEARCH_SERVICE_ENDPOINT}/knowledgebases/${AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME:-zava-company-kb}/mcp?api-version=2025-11-01-Preview"
+MCP_URL="${AZURE_AI_SEARCH_SERVICE_ENDPOINT}/knowledgebases/${AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME:-zava-company-kb}/mcp?api-version=2026-05-01-preview"
 TOKEN=$(az account get-access-token --resource https://search.azure.com --query accessToken -o tsv)
 OUTPUT_FILE="$SCRIPT_DIR/kb_mcp_response.json"
 

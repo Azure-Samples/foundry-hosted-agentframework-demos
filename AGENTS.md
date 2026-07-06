@@ -32,31 +32,33 @@ Finally, we can ensure that adversarial inputs can't produce unsafe outputs by r
 
 ## Azure conventions
 
-This repository follows Azure Developer CLI (`azd ai`) environment variable naming conventions.
+This repository follows Azure Developer CLI (`azd`) environment variable naming conventions.
 
-Always use these names in code, scripts, and docs:
+### Extension and hosted-agent variables
 
-- `FOUNDRY_PROJECT_ENDPOINT`
-- `AZURE_AI_MODEL_DEPLOYMENT_NAME`
+Keep official `azd ai` variable names exactly as-is in code, scripts, and docs. For hosted agents, also follow runtime injection rules:
 
-Do not introduce custom aliases unless there is a temporary backward-compatibility need.
+- `FOUNDRY_PROJECT_ENDPOINT` — official extension variable name; auto-injected at runtime for hosted agents. Do **not** set in `agent.yaml`.
+- `AZURE_AI_MODEL_DEPLOYMENT_NAME` — official extension variable name; keep this exact name.
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` — auto-injected at runtime for hosted agents. Do **not** set in `agent.yaml`.
+
+Do not introduce aliases for extension variables.
 
 Reference:
 
 - https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/extensions/azure-ai-foundry-extension#manage-environment-variables
 
-## Hosted agent environment variables
+### Repo-specific variables
+
+This repo also uses additional variables for sample setup (for example Search and knowledge base wiring), such as `AZURE_AI_SEARCH_SERVICE_ENDPOINT`.
+Those are repo-level requirements and are not part of the extension variable list above.
+
+### Hosted-agent `agent.yaml` constraints
 
 **Reserved prefixes:** The hosted agent platform reserves the `FOUNDRY_*` and `AGENT_*`
 environment variable prefixes. Do not use these prefixes for custom variables in
 `agent.yaml` — the deploy will fail with `invalid_payload`. If you need a custom variable
 that references a Foundry concept, use a different prefix (e.g., `CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME`).
-
-**Auto-injected variables:** The platform automatically injects these variables into the
-container at runtime — do **not** set them in `agent.yaml`:
-
-- `FOUNDRY_PROJECT_ENDPOINT` — the Foundry project endpoint
-- `APPLICATIONINSIGHTS_CONNECTION_STRING` — the App Insights connection string for tracing
 
 ## Logging
 
