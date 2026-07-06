@@ -40,7 +40,7 @@ TOOLBOX_NAME = os.environ.get("CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-too
 SEARCH_ENDPOINT = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
 KB_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "zava-company-kb")
 CONTENT_FILTER_MESSAGE = (
-    "I can’t help with that request because it violates content safety policies. "
+    "I can't help with that request because it violates content safety policies. "
     "If you have a safer or policy-compliant version of the question, I can help with that instead."
 )
 

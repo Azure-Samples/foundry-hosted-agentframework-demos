@@ -57,21 +57,6 @@ class ToolboxAuth(httpx.Auth):
         yield request
 
 
-# ---------------------------------------------------------------------------
-# Workaround: Azure AI Search KB MCP returns resource content with uri: null
-# or uri: "", which fails pydantic AnyUrl validation in the MCP SDK.
-# Relax the uri field to accept any string (or None) so parsing succeeds.
-# ---------------------------------------------------------------------------
-for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents, mcp.types.BlobResourceContents]:
-    _cls.model_fields["uri"].annotation = str | None
-    _cls.model_fields["uri"].default = None
-    _cls.model_fields["uri"].metadata = []
-for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents,
-             mcp.types.BlobResourceContents, mcp.types.EmbeddedResource,
-             mcp.types.CallToolResult]:
-    _cls.model_rebuild(force=True)
-
-
 async def main():
     credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
 
