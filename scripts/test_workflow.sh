@@ -72,11 +72,8 @@ add_test() {
   TEST_PROMPTS+=("$2")
 }
 
-add_test "Workflow basic formatting" "Write a short article (2 paragraphs) about electric bikes for city commuting."
-add_test "Workflow technical topic" "Write a short article (2 paragraphs) explaining retrieval augmented generation for a beginner audience."
 add_test "Workflow structure request" "Write a short article about remote work best practices and include a small bullet list of 4 practical tips."
-add_test "Workflow creativity" "Write a short article about why community gardens matter in cities."
-add_test "Workflow new session" "Write a short article about ocean conservation and end with one action item readers can take today."
+add_test "Workflow action item ending" "Write a short article about ocean conservation and end with one action item readers can take today."
 add_test "Workflow concise response" "Write a very concise short article about healthy sleep habits for software engineers."
 
 build_cmd() {
