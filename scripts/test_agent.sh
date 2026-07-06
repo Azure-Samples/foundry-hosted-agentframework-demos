@@ -4,11 +4,8 @@
 # Usage:
 #   ./scripts/test_agent.sh
 #   ./scripts/test_agent.sh --local
-#   ./scripts/test_agent.sh --agent hosted-agentframework-agent
-#   ./scripts/test_agent.sh --version 3
 #
 # Optional env vars:
-#   AGENT_NAME                 Default: hosted-agentframework-agent
 #   AZD_ENV                    Passed to `azd -e <env>` when set
 #   TEST_OUTPUT_DIR            Default: ./scripts/test_output_agent
 
@@ -23,10 +20,8 @@ if ! command -v azd >/dev/null 2>&1; then
   exit 1
 fi
 
-AGENT_NAME="${AGENT_NAME:-hosted-agentframework-agent}"
+AGENT_NAME="hosted-agentframework-agent"
 LOCAL_MODE=0
-AGENT_VERSION=""
-TIMEOUT_SECS=180
 OUTPUT_BASE="${TEST_OUTPUT_DIR:-$SCRIPT_DIR/test_output_agent}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_DIR="$OUTPUT_BASE/$TIMESTAMP"
@@ -38,9 +33,6 @@ Usage: $0 [options]
 
 Options:
   --local                 Invoke local agent (azd ai agent run must be active)
-  --agent <name>          Agent name to invoke (default: $AGENT_NAME)
-  --version <v>           Hosted agent version to invoke
-  --timeout <seconds>     Timeout per invoke (default: $TIMEOUT_SECS)
   -h, --help              Show this help
 EOF
 }
@@ -50,30 +42,6 @@ while [[ $# -gt 0 ]]; do
     --local)
       LOCAL_MODE=1
       shift
-      ;;
-    --agent)
-      AGENT_NAME="${2:-}"
-      if [[ -z "$AGENT_NAME" ]]; then
-        echo "ERROR: --agent requires a value"
-        exit 1
-      fi
-      shift 2
-      ;;
-    --version)
-      AGENT_VERSION="${2:-}"
-      if [[ -z "$AGENT_VERSION" ]]; then
-        echo "ERROR: --version requires a value"
-        exit 1
-      fi
-      shift 2
-      ;;
-    --timeout)
-      TIMEOUT_SECS="${2:-}"
-      if [[ -z "$TIMEOUT_SECS" ]]; then
-        echo "ERROR: --timeout requires a value"
-        exit 1
-      fi
-      shift 2
       ;;
     -h|--help)
       print_usage
@@ -93,10 +61,6 @@ echo "Agent test run: $TIMESTAMP" | tee "$SUMMARY_FILE"
 echo "Run directory: $RUN_DIR" | tee -a "$SUMMARY_FILE"
 echo "Agent: $AGENT_NAME" | tee -a "$SUMMARY_FILE"
 echo "Mode: $([[ $LOCAL_MODE -eq 1 ]] && echo local || echo hosted)" | tee -a "$SUMMARY_FILE"
-if [[ -n "$AGENT_VERSION" ]]; then
-  echo "Version: $AGENT_VERSION" | tee -a "$SUMMARY_FILE"
-fi
-echo "Timeout per test: ${TIMEOUT_SECS}s" | tee -a "$SUMMARY_FILE"
 echo "" | tee -a "$SUMMARY_FILE"
 
 # Query catalog
@@ -133,17 +97,11 @@ build_cmd() {
 
   if [[ $LOCAL_MODE -eq 1 ]]; then
     CMD+=("--local")
-    CMD+=("$prompt")
   else
     CMD+=("$AGENT_NAME")
-    CMD+=("$prompt")
   fi
 
-  if [[ -n "$AGENT_VERSION" ]]; then
-    CMD+=("--version" "$AGENT_VERSION")
-  fi
-
-  CMD+=("--timeout" "$TIMEOUT_SECS")
+  CMD+=("$prompt")
 }
 
 pass_count=0
