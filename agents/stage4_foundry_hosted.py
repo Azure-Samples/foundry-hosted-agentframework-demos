@@ -13,7 +13,6 @@ from collections.abc import Awaitable, Callable
 from datetime import date
 
 import httpx
-import mcp.types
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework._middleware import ChatContext
 from agent_framework._types import ChatResponse, Message
@@ -53,7 +52,7 @@ def get_current_date() -> str:
     return date.today().isoformat()
 
 @tool
-def get_enrollment_deadline_info() -> str:
+def get_enrollment_deadline_info() -> dict[str, str]:
     """Return enrollment timeline details for health insurance plans."""
     logger.info("Fetching enrollment deadline information")
     return {
@@ -88,25 +87,10 @@ async def content_filter_middleware(
         )
 
 
-# ---------------------------------------------------------------------------
-# Workaround: Azure AI Search KB MCP returns resource content with uri: null
-# or uri: "", which fails pydantic AnyUrl validation in the MCP SDK.
-# Relax the uri field to accept any string (or None) so parsing succeeds.
-# ---------------------------------------------------------------------------
-for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents, mcp.types.BlobResourceContents]:
-    _cls.model_fields["uri"].annotation = str | None
-    _cls.model_fields["uri"].default = None
-    _cls.model_fields["uri"].metadata = []
-for _cls in [mcp.types.ResourceContents, mcp.types.TextResourceContents,
-             mcp.types.BlobResourceContents, mcp.types.EmbeddedResource,
-             mcp.types.CallToolResult]:
-    _cls.model_rebuild(force=True)
-
-
 def main():
     """Main function to run the agent as a web server."""
-    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.getenv("AZURE_CLIENT_ID"))
-    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
+    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])
+    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"], process_timeout=60)
     credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
 
     # Foundry Toolbox MCP tool (web_search, code_interpreter, and knowledge_base_retrieve)
@@ -122,28 +106,9 @@ def main():
         name="toolbox",
         url=toolbox_endpoint,
         http_client=toolbox_http_client,
-        # Our toolbox includes Foundry IQ MCP KB, but that currently doesn't work.
-        # Fix should be out April 30th week. For now, just allow-list the other tools.
-        allowed_tools=["web_search", "code_interpreter"],
         load_prompts=False,
     )
 
-    # Direct KB MCP connection (workaround: toolbox names KB tool with a dot,
-    # which the hosted agent Responses API rejects)
-    kb_mcp_url = f"{SEARCH_ENDPOINT.rstrip('/')}/knowledgebases/{KB_NAME}/mcp?api-version=2025-11-01-Preview"
-    logger.info("Using KB MCP at %s", kb_mcp_url)
-    search_token_provider = get_bearer_token_provider(credential, "https://search.azure.com/.default")
-    kb_http_client = httpx.AsyncClient(
-        auth=ToolboxAuth(search_token_provider),
-        timeout=120.0,
-    )
-    kb_mcp_tool = MCPStreamableHTTPTool(
-        name="knowledge_base",
-        url=kb_mcp_url,
-        http_client=kb_http_client,
-        allowed_tools=["knowledge_base_retrieve"],
-        load_prompts=False,
-    )
 
     client = FoundryChatClient(
         project_endpoint=PROJECT_ENDPOINT,
@@ -153,7 +118,7 @@ def main():
     )
 
     agent = Agent(
-        client=client,
+        client=client,  # ty:ignore
         name="InternalHRHelper",
         instructions="""You are an internal HR helper focused on employee benefits and company information.
         Use the knowledge base tool to answer questions and ground all answers in provided context.
@@ -165,8 +130,7 @@ def main():
         tools=[
             get_enrollment_deadline_info,
             get_current_date,
-            toolbox_mcp_tool,
-            kb_mcp_tool,
+            toolbox_mcp_tool
         ],
         default_options={"store": False},
     )

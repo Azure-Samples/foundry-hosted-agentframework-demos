@@ -38,19 +38,28 @@ azd up
 
 > **Region:** The template restricts deployment to regions that support all features (Responses API, evaluations, red teaming): `eastus2`, `francecentral`, `northcentralus`, `swedencentral`.
 
-### Set up the knowledge base
+### Knowledge base setup
 
-After provisioning, create the search indexes and knowledge base:
+After `azd up`, the `postprovision` hook automatically creates the search indexes and knowledge base.
+
+If you need to re-run setup manually (for example, after changing index schema or sample data):
 
 ```bash
-./write_dot_env.sh  # or .\write_dot_env.ps1 on Windows
+./infra/hooks/write_dot_env.sh  # or .\infra\hooks\write_dot_env.ps1 on Windows
 uv run python infra/create-search-indexes.py \
     --endpoint "$AZURE_AI_SEARCH_SERVICE_ENDPOINT" \
     --openai-endpoint "$AZURE_OPENAI_ENDPOINT" \
     --openai-model-deployment "$AZURE_AI_MODEL_DEPLOYMENT_NAME"
 ```
 
+Or rerun the full postprovision hook:
+
+```bash
+azd hooks run postprovision
+```
+
 This creates:
+
 - `hrdocs` and `healthdocs` search indexes with sample data
 - A single knowledge base (`zava-company-kb`) with both indexes as knowledge sources
 
@@ -59,7 +68,7 @@ This creates:
 1. Sync your `.env` from the azd environment:
 
     ```bash
-    ./write_dot_env.sh
+    ./infra/hooks/write_dot_env.sh
     ```
 
 2. Start the local hosted-agent server:

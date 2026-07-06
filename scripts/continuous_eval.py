@@ -86,7 +86,45 @@ def main() -> None:
                     initialization_parameters={
                         "deployment_name": model_deployment,
                     },
-                )
+                ),
+                # Safety evaluators run continuously on live traces so we catch
+                # unsafe outputs in production, not just during red-team scans.
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Violence",
+                    evaluator_name="builtin.violence",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Self Harm",
+                    evaluator_name="builtin.self_harm",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Sexual",
+                    evaluator_name="builtin.sexual",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                ),
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="Hate Unfairness",
+                    evaluator_name="builtin.hate_unfairness",
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{item.response}}",
+                    },
+                ),
             ],
         )
         print(f"Created evaluation: {evaluation.id}")
