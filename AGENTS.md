@@ -114,6 +114,14 @@ This is where to search and file bugs for the technologies used in this reposito
 * azd: github.com/Azure/azure-dev
 * Agentserver wrapper SDK (part of Azure Python SDK): github.com/azure/azure-sdk-for-python
 
+## Known issues
+
+Azure SDK for Python Search preview regressions tracked upstream:
+
+* https://github.com/Azure/azure-sdk-for-python/issues/47871 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalOutputMode` from `azure.search.documents.indexes.models`.
+* https://github.com/Azure/azure-sdk-for-python/issues/47872 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalReasoningEffort` from `azure.search.documents.indexes.models`.
+* https://github.com/Azure/azure-sdk-for-python/issues/47873 - `azure-search-documents==12.1.0b1` no longer exposes public serialize/deserialize methods for `SearchIndex`.
+
 ## Relevant documentation
 
 MAF Observability

@@ -74,7 +74,7 @@ var aiProjectDeployments = [
     }
     sku: {
       name: 'GlobalStandard'
-      capacity: 10
+      capacity: 150
     }
   }
 ]

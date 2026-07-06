@@ -62,10 +62,11 @@ async def main():
         ),
     )
 
-    # Build the workflow and convert to a single agent via .as_agent()
+    # Build the workflow and convert to a single agent via .as_agent().
+    # Only the formatter's yield_output should surface as the workflow output.
     formatter_executor = AgentExecutor(formatter, context_mode="last_agent")
     workflow = (
-        WorkflowBuilder(start_executor=writer, output_executors=[formatter_executor])
+        WorkflowBuilder(start_executor=writer, output_from=[formatter_executor])
         .add_edge(writer, formatter_executor)
         .build()
     )

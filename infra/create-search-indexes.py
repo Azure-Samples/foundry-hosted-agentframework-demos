@@ -13,7 +13,6 @@ from azure.search.documents.indexes.models import (
     AzureOpenAIVectorizerParameters,
     KnowledgeBase,
     KnowledgeBaseAzureOpenAIModel,
-    KnowledgeRetrievalOutputMode,
     KnowledgeSourceReference,
     SearchIndex,
     SearchIndexFieldReference,
@@ -38,7 +37,7 @@ async def create_index_and_upload(
         with index_schema_path.open("r", encoding="utf-8") as f:
             index_data = json.load(f)
 
-        index = SearchIndex.deserialize(index_data)
+        index = SearchIndex._deserialize(index_data, [])
         index.name = index_name
 
         if openai_endpoint and index.vector_search and index.vector_search.vectorizers:
@@ -131,7 +130,7 @@ async def create_knowledge_base(
             name=kb_name,
             description=kb_description,
             knowledge_sources=source_refs,
-            output_mode=KnowledgeRetrievalOutputMode.EXTRACTIVE_DATA,
+            output_mode="extractiveData",
             **(dict(models=models) if models else {}),
         )
 

@@ -12,19 +12,17 @@ import os
 from collections.abc import Awaitable, Callable
 from datetime import date
 
-import httpx
-from agent_framework import Agent, MCPStreamableHTTPTool, tool
+from agent_framework import Agent, tool
 from agent_framework._middleware import ChatContext
 from agent_framework._types import ChatResponse, Message
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
-from agent_framework_foundry_hosting import ResponsesHostServer
+from agent_framework_foundry_hosting import FoundryToolbox, ResponsesHostServer
 from agent_framework_openai._exceptions import OpenAIContentFilterException
 from azure.identity import (
     AzureDeveloperCliCredential,
     ChainedTokenCredential,
     ManagedIdentityCredential,
-    get_bearer_token_provider,
 )
 from dotenv import load_dotenv
 
@@ -61,18 +59,6 @@ def get_enrollment_deadline_info() -> dict[str, str]:
     }
 
 
-class ToolboxAuth(httpx.Auth):
-    """httpx Auth that injects a fresh bearer token for the Foundry Toolbox MCP endpoint."""
-
-    def __init__(self, token_provider) -> None:
-        self._token_provider = token_provider
-
-    def auth_flow(self, request):
-        """Add Authorization header with a fresh token on every request."""
-        request.headers["Authorization"] = f"Bearer {self._token_provider()}"
-        yield request
-
-
 async def content_filter_middleware(
     context: ChatContext, call_next: Callable[[], Awaitable[None]]
 ) -> None:
@@ -89,23 +75,17 @@ async def content_filter_middleware(
 
 def main():
     """Main function to run the agent as a web server."""
-    user_assigned_managed_identity_credential = ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])
-    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"], process_timeout=60)
-    credential = ChainedTokenCredential(user_assigned_managed_identity_credential, azure_dev_cli_credential)
+    managed_identity_credential = ManagedIdentityCredential()
+    azure_dev_cli_credential = AzureDeveloperCliCredential(tenant_id=os.getenv("AZURE_TENANT_ID"), process_timeout=60)
+    credential = ChainedTokenCredential(managed_identity_credential, azure_dev_cli_credential)
 
-    # Foundry Toolbox MCP tool (web_search, code_interpreter, and knowledge_base_retrieve)
+    # Foundry Toolbox MCP tool forwards the platform call-id required by protocol v2.
     toolbox_endpoint = f"{PROJECT_ENDPOINT.rstrip('/')}/toolboxes/{TOOLBOX_NAME}/mcp?api-version=v1"
     logger.info("Using Foundry Toolbox MCP at %s", toolbox_endpoint)
-    token_provider = get_bearer_token_provider(credential, "https://ai.azure.com/.default")
-    toolbox_http_client = httpx.AsyncClient(
-        auth=ToolboxAuth(token_provider),
-        headers={"Foundry-Features": "Toolboxes=V1Preview"},
-        timeout=120.0,
-    )
-    toolbox_mcp_tool = MCPStreamableHTTPTool(
-        name="toolbox",
+    toolbox_mcp_tool = FoundryToolbox(
+        credential=credential,
         url=toolbox_endpoint,
-        http_client=toolbox_http_client,
+        name="toolbox",
         load_prompts=False,
     )
 
