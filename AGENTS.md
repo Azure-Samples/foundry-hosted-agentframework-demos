@@ -38,8 +38,6 @@ Always use these names in code, scripts, and docs:
 
 - `FOUNDRY_PROJECT_ENDPOINT`
 - `AZURE_AI_MODEL_DEPLOYMENT_NAME`
-- `AZURE_AI_SEARCH_SERVICE_ENDPOINT`
-- `AZURE_AI_SEARCH_CONNECTION_NAME`
 
 Do not introduce custom aliases unless there is a temporary backward-compatibility need.
 
@@ -121,6 +119,10 @@ Azure SDK for Python Search preview regressions tracked upstream:
 * https://github.com/Azure/azure-sdk-for-python/issues/47871 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalOutputMode` from `azure.search.documents.indexes.models`.
 * https://github.com/Azure/azure-sdk-for-python/issues/47872 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalReasoningEffort` from `azure.search.documents.indexes.models`.
 * https://github.com/Azure/azure-sdk-for-python/issues/47873 - `azure-search-documents==12.1.0b1` no longer exposes public serialize/deserialize methods for `SearchIndex`.
+
+Microsoft Agent Framework typing issue tracked upstream:
+
+* https://github.com/microsoft/agent-framework/issues/6938 - `Agent(client=FoundryChatClient(...))` reports a static type mismatch in `ty` despite working at runtime.
 
 ## Relevant documentation
 

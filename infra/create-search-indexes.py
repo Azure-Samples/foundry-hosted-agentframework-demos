@@ -37,6 +37,8 @@ async def create_index_and_upload(
         with index_schema_path.open("r", encoding="utf-8") as f:
             index_data = json.load(f)
 
+        # Temporary workaround: preview SDK no longer exposes public deserialize methods for SearchIndex.
+        # Tracked at: https://github.com/Azure/azure-sdk-for-python/issues/47873
         index = SearchIndex._deserialize(index_data, [])
         index.name = index_name
 
