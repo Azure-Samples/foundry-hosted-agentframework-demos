@@ -126,7 +126,7 @@ Microsoft Agent Framework typing issue tracked upstream:
 
 * https://github.com/microsoft/agent-framework/issues/6938 - `Agent(client=FoundryChatClient(...))` reports a static type mismatch in `ty` despite working at runtime.
 
-Ollama issues that cause some models to behave poorly with the Ollama Responses API, as described in [https://github.com/Azure-Samples/foundry-hosted-agentframework-demos/issues/3](issue #3):
+Ollama issues that cause some models to behave poorly with the Ollama Responses API, as described in [issue #3](https://github.com/Azure-Samples/foundry-hosted-agentframework-demos/issues/3):
 
 * https://github.com/ollama/ollama/issues/15573 - Gemma4 tool-calling can enter an infinite loop in some setups.
 * https://github.com/ollama/ollama/issues/15719 - Gemma4 infinite tool-call loop reported through LiteLLM/OpenAI-compatible proxy path.
