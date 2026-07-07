@@ -21,11 +21,11 @@ Single agent ([`agents/`](agents/)):
 
 | Stage | File | What it adds |
 |-------|------|--------------|
-| 0 | [stage0_local_model.py](agents/stage0_local_model.py) | A fully local agent + tool loop using a small model via Ollama (no cloud) |
+| 0 | [stage0_local_model.py](agents/stage0_local_model.py) | A fully local agent + tool loop using `OpenAIChatClient` with a small model from Ollama (no cloud) |
 | 1 | [stage1_foundry_model.py](agents/stage1_foundry_model.py) | Swaps the local model for a Foundry-deployed model (keyless Entra auth) |
 | 2 | [stage2_foundry_iq.py](agents/stage2_foundry_iq.py) | Grounds answers in a Foundry IQ knowledge base via its MCP endpoint |
-| 3 | [stage3_foundry_toolbox.py](agents/stage3_foundry_toolbox.py) | Bundles web search, code interpreter, and the KB into one Foundry Toolbox |
-| 4 | [stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py) | Wraps the agent in `ResponsesHostServer` for deployment as a hosted agent |
+| 3 | [stage3_foundry_toolbox.py](agents/stage3_foundry_toolbox.py) | Bundles web search, code interpreter, and the KB into one Foundry Toolbox, accessed via its MCP endpoint |
+| 4 | [stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py) | Wraps the agent in `ResponsesHostServer` for hosted deployment, using `FoundryChatClient` with a `FoundryToolbox` MCP tool |
 
 Multi-agent workflow ([`workflows/`](workflows/)):
 
@@ -36,7 +36,7 @@ Multi-agent workflow ([`workflows/`](workflows/)):
 | 3 | [stage3_as_agent.py](workflows/stage3_as_agent.py) | Wraps a whole workflow as an agent with `.as_agent()` |
 | 4 | [stage4_foundry_hosted_as_agent.py](workflows/stage4_foundry_hosted_as_agent.py) | Hosts the workflow on Foundry, exactly like a single agent |
 
-The deployed stage-4 agent ([stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py)) uses `FoundryChatClient` for the model and a single `FoundryToolbox` MCP tool that exposes web search, code interpreter, and the Foundry IQ knowledge base, alongside two local Python tools for enrollment dates. Both the agent and the workflow are declared as services in [azure.yaml](azure.yaml), so `azd up` deploys both in one command.
+Both the agent and the workflow are declared as services in [azure.yaml](azure.yaml), so `azd up` deploys both in one command.
 
 ## Prerequisites
 
@@ -197,15 +197,3 @@ dependencies
 | project timestamp, name, opName, toolName, toolArgs
 | order by timestamp desc
 ```
-
-## Environment variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `FOUNDRY_PROJECT_ENDPOINT` | Yes | Foundry project endpoint (auto-injected at runtime for hosted agents) |
-| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Yes | Model deployment name (e.g., `gpt-5.2`) |
-| `AZURE_OPENAI_ENDPOINT` | Yes | Azure OpenAI endpoint (used by the earlier `OpenAIChatClient` stages) |
-| `AZURE_AI_SEARCH_SERVICE_ENDPOINT` | Yes | Azure AI Search endpoint |
-| `CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME` | Yes | Foundry Toolbox name used by the hosted agent (default: `hr-agent-tools`) |
-| `AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME` | No | Knowledge base name used by the intermediate stages and toolbox setup (default: `zava-company-kb`) |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | No | App Insights connection string for tracing (auto-injected at runtime for hosted agents) |
