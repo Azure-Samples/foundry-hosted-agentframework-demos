@@ -6,8 +6,11 @@ No cloud, no account required. Demonstrates the core agent loop:
 
 Prerequisites:
     1. Install Ollama: https://ollama.com/download
-    2. Pull a small model that supports tool calling, e.g.:
-         ollama pull llama3.2
+        2. Pull a small model that supports tool calling.
+             This script defaults to `qwen3.5:4b`, so pull that model or update
+             the `model=` value below to one you already have, e.g.:
+                 ollama pull qwen3.5:4b
+                 ollama pull llama3.2
     3. Make sure Ollama is running (it serves an OpenAI-compatible API
        at http://localhost:11434/v1 by default).
 
