@@ -158,7 +158,7 @@ Continuous evaluation draws from recent agent traces, so you need some traffic b
 
 ```bash
 uv run scripts/send_requests.py            # 60 requests (default); pass a number to change
-locust -f scripts/locustfile.py --headless -u 10 -r 2 -t 5m
+uv run locust -f scripts/locustfile.py --headless -u 10 -r 2 -t 5m
 ```
 
 > **Note:** Red teaming requires a supported region (East US 2, Sweden Central, etc.). See [evaluation region support](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network).
