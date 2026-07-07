@@ -65,7 +65,7 @@ async def main():
         credential, "https://cognitiveservices.azure.com/.default"
     )
     client = OpenAIChatClient(
-        base_url=f"{os.environ['AZURE_OPENAI_ENDPOINT']}openai/v1/",
+        base_url=f"{os.environ['AZURE_OPENAI_ENDPOINT']}/openai/v1/",
         api_key=aoai_token_provider,
         model=os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"],
     )

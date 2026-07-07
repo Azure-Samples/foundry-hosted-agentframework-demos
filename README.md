@@ -1,24 +1,42 @@
-# Internal HR Benefits Agent
+# Host your agents on Foundry: Microsoft Agent Framework
 
-A sample AI agent built with [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) that helps employees with HR benefits questions. This project is designed as an `azd` starter template for deploying hosted AI agents to [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/).
+This is the code companion for the **[Host your agents on Foundry](https://aka.ms/AgentsOnFoundry/series)** livestream series. It builds up a sample "Internal HR Benefits Agent" with [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) (the successor to AutoGen and Semantic Kernel) and deploys it as a hosted agent on [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/) using the Azure Developer CLI (`azd`).
+
+> 📺 Watch the session and read the annotated slides: [session write-up](https://github.com/pamelafox/presentation-writeups/blob/main/presentations/foundry-agents-agentframework/outputs/writeup.md).
 
 ## What it does
 
-The agent uses company HR documents (via Azure AI Search) and tool-calling to:
+The agent helps employees with HR benefits questions. It grounds answers in company HR documents (via Azure AI Search / Foundry IQ) and uses tool-calling to:
 
 - Answer questions about employee benefits (health insurance, dental, vision, 401k, etc.)
 - Look up enrollment deadlines and dates
 - Search the web for current information when the knowledge base doesn't have the answer
 - Run code via Code Interpreter for data analysis tasks
 
-## Architecture
+## How the sample is structured
 
-The agent supports two modes for knowledge base integration, controlled by the `FOUNDRY_IQ_CONTEXT_MODE` environment variable:
+Rather than jumping straight to the finished agent, the code is organized as a series of **stages** that each add one capability. This mirrors the presentation, so you can run and understand each step on its own.
 
-- **`context_provider`** — Uses `AzureAISearchContextProvider` to inject KB results into context automatically before each turn
-- **`kb_mcp_endpoint`** (default) — Uses `MCPStreamableHTTPTool` to connect to the KB's MCP endpoint, letting the model decide when to search
+Single agent ([`agents/`](agents/)):
 
-Both modes also include Foundry built-in tools (web search, code interpreter) when running in the hosted environment.
+| Stage | File | What it adds |
+|-------|------|--------------|
+| 0 | [stage0_local_model.py](agents/stage0_local_model.py) | A fully local agent + tool loop using `OpenAIChatClient` with a small model from Ollama (no cloud) |
+| 1 | [stage1_foundry_model.py](agents/stage1_foundry_model.py) | Swaps the local model for a Foundry-deployed model (keyless Entra auth) |
+| 2 | [stage2_foundry_iq.py](agents/stage2_foundry_iq.py) | Grounds answers in a Foundry IQ knowledge base via its MCP endpoint |
+| 3 | [stage3_foundry_toolbox.py](agents/stage3_foundry_toolbox.py) | Bundles web search, code interpreter, and the KB into one Foundry Toolbox, accessed via its MCP endpoint |
+| 4 | [stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py) | Wraps the agent in `ResponsesHostServer` for hosted deployment, using `FoundryChatClient` with a `FoundryToolbox` MCP tool |
+
+Multi-agent workflow ([`workflows/`](workflows/)):
+
+| Stage | File | What it adds |
+|-------|------|--------------|
+| 1 | [stage1_simple_executors.py](workflows/stage1_simple_executors.py) | A minimal two-node workflow with `WorkflowBuilder` and `Executor` |
+| 2 | [stage2_agent_executors.py](workflows/stage2_agent_executors.py) | Uses agents as workflow nodes via `AgentExecutor` |
+| 3 | [stage3_as_agent.py](workflows/stage3_as_agent.py) | Wraps a whole workflow as an agent with `.as_agent()` |
+| 4 | [stage4_foundry_hosted_as_agent.py](workflows/stage4_foundry_hosted_as_agent.py) | Hosts the workflow on Foundry, exactly like a single agent |
+
+Both the agent and the workflow are declared as services in [azure.yaml](azure.yaml), so `azd up` deploys both in one command.
 
 ## Prerequisites
 
@@ -89,6 +107,37 @@ This creates:
 azd deploy
 ```
 
+### Test the deployed agent
+
+Once deployed, invoke the agent by name (for the local server started by `azd ai agent run`, use `--local` without the agent name instead):
+
+```bash
+azd ai agent invoke hosted-agentframework-agent "What benefits are there, and when do I need to enroll by?"
+```
+
+You can also call the hosted agent from Python via the `azure-ai-projects` SDK, which returns an OpenAI-compatible client for the Responses API:
+
+```bash
+uv run agents/call_foundry_hosted.py
+```
+
+See [agents/call_foundry_hosted.py](agents/call_foundry_hosted.py) for the full example.
+
+For a repeatable suite that exercises each tool path and writes timestamped results under `scripts/test_output_*/`, use the test scripts. Each runs against the deployed agent by default, or pass `--local` to target a running `azd ai agent run`:
+
+| Script | Tests |
+|--------|-------|
+| [scripts/test_agent.sh](scripts/test_agent.sh) | The hosted agent (`hosted-agentframework-agent`) across its tool paths |
+| [scripts/test_workflow.sh](scripts/test_workflow.sh) | The hosted workflow (`hosted-agentframework-workflow`) |
+| [scripts/test_kb_mcp.sh](scripts/test_kb_mcp.sh) | The Foundry IQ knowledge base MCP endpoint directly via `curl` |
+
+```bash
+./scripts/test_agent.sh              # deployed agent
+./scripts/test_agent.sh --local      # local agent (azd ai agent run must be active)
+./scripts/test_workflow.sh
+./scripts/test_kb_mcp.sh "employee benefits overview"
+```
+
 ## Evaluation scripts
 
 Scripts for quality evaluation, red teaming, and scheduled runs are in `scripts/`:
@@ -102,18 +151,18 @@ Scripts for quality evaluation, red teaming, and scheduled runs are in `scripts/
 | `scripts/continuous_eval_alert.py` | Create an Azure Monitor alert for low evaluation pass rates |
 | `scripts/red_team_scan.py` | Attempt the hosted red-team flow; currently non-actionable for this sample |
 | `scripts/red_team_scan_local.py` | Run local-preview red teaming against `azd ai agent run` |
+| `scripts/send_requests.py` | Send a batch of varied (and deliberately tricky) requests to generate sample traces |
+| `scripts/locustfile.py` | Load-test the hosted agent with Locust to generate traffic under concurrency |
+
+Continuous evaluation draws from recent agent traces, so you need some traffic before there's anything to evaluate. Use [scripts/send_requests.py](scripts/send_requests.py) for a quick sequential batch, or [scripts/locustfile.py](scripts/locustfile.py) for concurrent load, to populate the agent with sample data first:
 
 ```bash
-uv run scripts/quality_eval.py
-uv run scripts/continuous_eval.py
-azd ai agent run
-uv run scripts/red_team_scan_local.py
-uv run scripts/red_team_scan.py
+uv run scripts/send_requests.py            # 60 requests (default); pass a number to change
+uv run locust -f scripts/locustfile.py --headless -u 10 -r 2 -t 5m
 ```
 
 > **Note:** Red teaming requires a supported region (East US 2, Sweden Central, etc.). See [evaluation region support](https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-regions-limits-virtual-network).
->
-> **Current sample limitation:** Hosted-agent cloud red teaming is not supported yet for this sample. Use `scripts/red_team_scan_local.py` with a locally running agent for now, and treat `scripts/red_team_scan.py` as a future hosted path to re-enable once the service support lands.
+> **Current limitation:** Hosted-agent cloud red teaming is not supported yet for Foundry hosted agents. Use `scripts/red_team_scan_local.py` with a locally running agent for now, and treat `scripts/red_team_scan.py` as a future hosted path to re-enable once the service support lands.
 
 ## Debug with `azd`
 
@@ -134,7 +183,7 @@ azd ai agent monitor -f
 
 The agent exports OpenTelemetry traces to Application Insights when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set (handled automatically by the hosted agent server).
 
-To enable sensitive data in traces (tool call arguments, prompts, responses), set `enable_sensitive_data=True` in the `enable_instrumentation()` call in `main.py`. This is useful for debugging but should be disabled in production.
+This sample enables sensitive data in traces (tool call arguments, prompts, responses) by default, via `enable_instrumentation(enable_sensitive_data=True)` in [agents/stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py). This is useful for debugging, but for production you should set `enable_sensitive_data=False`.
 
 To query traces in Application Insights:
 
@@ -148,14 +197,3 @@ dependencies
 | project timestamp, name, opName, toolName, toolArgs
 | order by timestamp desc
 ```
-
-## Environment variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `FOUNDRY_PROJECT_ENDPOINT` | Yes | Foundry project endpoint |
-| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Yes | Model deployment name (e.g., `gpt-5.2`) |
-| `AZURE_AI_SEARCH_SERVICE_ENDPOINT` | Yes | Azure AI Search endpoint |
-| `AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME` | Yes | Knowledge base name (default: `zava-company-kb`) |
-| `FOUNDRY_IQ_CONTEXT_MODE` | No | `context_provider` or `kb_mcp_endpoint` (default) |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | No | App Insights connection string for tracing |
