@@ -44,7 +44,7 @@ def get_enrollment_deadline_info() -> dict:
 
 # Ollama exposes an OpenAI-compatible endpoint; no API key needed.
 # qwen3.5:4b works well here, but some models may behave better with
-# OpenAIChatCompletionClient instead of OpenAIChatClient
+# OpenAIChatCompletionClient (uses /v1/chat/completions) instead of OpenAIChatClient (uses /v1/responses).
 client = OpenAIChatClient(
     base_url="http://localhost:11434/v1/",
     api_key="no-key-needed",  # any non-empty string
