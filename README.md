@@ -109,10 +109,10 @@ azd deploy
 
 ### Test the deployed agent
 
-Once deployed, invoke the agent by name (drop the `--local` flag to hit the hosted agent instead of a local server):
+Once deployed, invoke the agent by name (for the local server started by `azd ai agent run`, use `--local` without the agent name instead):
 
 ```bash
-azd ai agent invoke "What benefits are there, and when do I need to enroll by?"
+azd ai agent invoke hosted-agentframework-agent "What benefits are there, and when do I need to enroll by?"
 ```
 
 You can also call the hosted agent from Python via the `azure-ai-projects` SDK, which returns an OpenAI-compatible client for the Responses API:
@@ -183,7 +183,7 @@ azd ai agent monitor -f
 
 The agent exports OpenTelemetry traces to Application Insights when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set (handled automatically by the hosted agent server).
 
-To enable sensitive data in traces (tool call arguments, prompts, responses), set `enable_sensitive_data=True` in the `enable_instrumentation()` call in [agents/stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py). This is useful for debugging but should be disabled in production.
+This sample enables sensitive data in traces (tool call arguments, prompts, responses) by default, via `enable_instrumentation(enable_sensitive_data=True)` in [agents/stage4_foundry_hosted.py](agents/stage4_foundry_hosted.py). This is useful for debugging, but for production you should set `enable_sensitive_data=False`.
 
 To query traces in Application Insights:
 
