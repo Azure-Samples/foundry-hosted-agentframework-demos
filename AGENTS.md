@@ -126,6 +126,14 @@ Microsoft Agent Framework typing issue tracked upstream:
 
 * https://github.com/microsoft/agent-framework/issues/6938 - `Agent(client=FoundryChatClient(...))` reports a static type mismatch in `ty` despite working at runtime.
 
+Ollama OpenAI-compat/tool-calling issues tracked upstream:
+
+* https://github.com/ollama/ollama/issues/15573 - Gemma4 tool-calling can enter an infinite loop in some setups.
+* https://github.com/ollama/ollama/issues/15719 - Gemma4 infinite tool-call loop reported through LiteLLM/OpenAI-compatible proxy path.
+* https://github.com/ollama/ollama/issues/15921 - Responses API parity gap: missing `namespace` support in tool calls.
+* https://github.com/ollama/ollama/issues/10976 - OpenAI-compatible tool-calling compatibility gaps across models/providers.
+* https://github.com/ollama/ollama/issues/14601 - Qwen tool-calling reliability issues in OpenAI-compatible usage.
+
 ## Relevant documentation
 
 MAF Observability
