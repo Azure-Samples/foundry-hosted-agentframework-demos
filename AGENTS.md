@@ -116,11 +116,11 @@ This is where to search and file bugs for the technologies used in this reposito
 
 ## Known issues
 
-Azure SDK for Python Search preview regressions tracked upstream:
+Azure SDK for Python Search preview changes (all resolved):
 
-* https://github.com/Azure/azure-sdk-for-python/issues/47871 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalOutputMode` from `azure.search.documents.indexes.models`.
-* https://github.com/Azure/azure-sdk-for-python/issues/47872 - `azure-search-documents==12.1.0b1` no longer exports `KnowledgeRetrievalReasoningEffort` from `azure.search.documents.indexes.models`.
-* https://github.com/Azure/azure-sdk-for-python/issues/47873 - `azure-search-documents==12.1.0b1` no longer exposes public serialize/deserialize methods for `SearchIndex`.
+* https://github.com/Azure/azure-sdk-for-python/issues/47871 (closed) - `KnowledgeRetrievalOutputMode` moved to `azure.search.documents.knowledgebases.models`.
+* https://github.com/Azure/azure-sdk-for-python/issues/47872 (closed) - `KnowledgeRetrievalReasoningEffort` moved to `azure.search.documents.knowledgebases.models`.
+* https://github.com/Azure/azure-sdk-for-python/issues/47873 (closed) - `serialize()`/`deserialize()` removed; use `SearchIndex(data)` and `index.as_dict()` instead.
 
 Microsoft Agent Framework typing issue tracked upstream:
 

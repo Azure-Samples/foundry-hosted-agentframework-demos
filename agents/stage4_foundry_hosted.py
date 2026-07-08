@@ -96,7 +96,7 @@ def main():
     )
 
     agent = Agent(
-        client=client,  # type: ignore
+        client=client,
         name="InternalHRHelper",
         instructions="""You are an internal HR helper focused on employee benefits and company information.
         Use the knowledge base tool to answer questions and ground all answers in provided context.
