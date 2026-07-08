@@ -10,6 +10,7 @@ from azure.identity.aio import AzureDeveloperCliCredential
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import (
+    AzureOpenAIVectorizer,
     AzureOpenAIVectorizerParameters,
     KnowledgeBase,
     KnowledgeBaseAzureOpenAIModel,
@@ -19,6 +20,7 @@ from azure.search.documents.indexes.models import (
     SearchIndexKnowledgeSource,
     SearchIndexKnowledgeSourceParameters,
 )
+from azure.search.documents.knowledgebases.models import KnowledgeRetrievalOutputMode
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
@@ -37,13 +39,13 @@ async def create_index_and_upload(
         with index_schema_path.open("r", encoding="utf-8") as f:
             index_data = json.load(f)
 
-        # Temporary workaround: preview SDK no longer exposes public deserialize methods for SearchIndex.
-        # Tracked at: https://github.com/Azure/azure-sdk-for-python/issues/47873
-        index = SearchIndex._deserialize(index_data, [])
+        index = SearchIndex(index_data)
         index.name = index_name
 
         if openai_endpoint and index.vector_search and index.vector_search.vectorizers:
-            index.vector_search.vectorizers[0].parameters.resource_url = openai_endpoint
+            vectorizer = index.vector_search.vectorizers[0]
+            if isinstance(vectorizer, AzureOpenAIVectorizer) and vectorizer.parameters:
+                vectorizer.parameters.resource_url = openai_endpoint
 
         await index_client.create_or_update_index(index)
 
@@ -132,7 +134,7 @@ async def create_knowledge_base(
             name=kb_name,
             description=kb_description,
             knowledge_sources=source_refs,
-            output_mode="extractiveData",
+            output_mode=KnowledgeRetrievalOutputMode.EXTRACTIVE_DATA,
             **(dict(models=models) if models else {}),
         )
 
