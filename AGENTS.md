@@ -116,12 +116,6 @@ This is where to search and file bugs for the technologies used in this reposito
 
 ## Known issues
 
-Azure SDK for Python Search preview changes (all resolved):
-
-* https://github.com/Azure/azure-sdk-for-python/issues/47871 (closed) - `KnowledgeRetrievalOutputMode` moved to `azure.search.documents.knowledgebases.models`.
-* https://github.com/Azure/azure-sdk-for-python/issues/47872 (closed) - `KnowledgeRetrievalReasoningEffort` moved to `azure.search.documents.knowledgebases.models`.
-* https://github.com/Azure/azure-sdk-for-python/issues/47873 (closed) - `serialize()`/`deserialize()` removed; use `SearchIndex(data)` and `index.as_dict()` instead.
-
 Microsoft Agent Framework typing issue tracked upstream:
 
 * https://github.com/microsoft/agent-framework/issues/6938 - `Agent(client=FoundryChatClient(...))` reports a static type mismatch in `ty` despite working at runtime.
